@@ -136,7 +136,7 @@ export default function App() {
       return { ...d, face };
     });
     setDice(newDice);
-    setCredits((c) => c.add(earned));
+    setCredits((c: DecimalInstance) => c.add(earned));
     setLastRoll({ entries, total: earned.toString() });
   }
 
@@ -152,7 +152,7 @@ export default function App() {
     const cost = toDecimal(amount);
     if (DecimalHelpers.gte(credits, cost)) {
       // Always use Decimal subtraction (no numeric fallback)
-      setCredits(c => c.sub(cost));
+      setCredits((c: DecimalInstance) => c.sub(cost));
       return true;
     }
     pushNotification('Insufficient credits');
