@@ -3,7 +3,7 @@
 // falls back to a safe JS-number based implementation for prototyping and tests.
 
 // Use Decimal from break_eternity.js explicitly (installed by user)
-import Decimal from 'break_eternity.js';
+import Decimal from '@patashu/break_eternity.js';
 
 export function toDecimal(x: number | string | Decimal) {
   if (x && typeof (x as any).toString === 'function' && (x as any)._isDecimal) return x as Decimal;
