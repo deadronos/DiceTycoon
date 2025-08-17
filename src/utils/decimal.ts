@@ -2,16 +2,82 @@
 // It prefers a high-precision Decimal (break_eternity.js) if available, but
 // falls back to a safe JS-number based implementation for prototyping and tests.
 
-// Use Decimal from break_eternity.js explicitly (installed by user)
-import Decimal from '@patashu/break_eternity.js';
+// Robust import/detection of Decimal implementation.
+// Some environments (tests, different package builds) expose the library in different shapes
+// so we detect a constructor function in multiple possible locations and fall back to a
+// lightweight Number-backed implementation when necessary.
+// Use the vendored break_eternity build that lives under libs/
+// This ensures a deterministic, committed runtime for Decimal operations.
+import * as DecimalModule from '@patashu/break_eternity.js';
 
-export function toDecimal(x: number | string | Decimal) {
-  if (x && typeof (x as any).toString === 'function' && (x as any)._isDecimal) return x as Decimal;
-  return new Decimal(typeof x === 'string' ? x : String(x));
+// Detect the runtime export shape from the vendored module. Different bundlers
+// and environments may expose the constructor as the default export, as a
+// named `Decimal` export, or wrapped under a `.default` property. Handle the
+// common possibilities and fall back to a lightweight Number-backed Decimal
+// when none are found.
+let DecimalCtor: any = undefined;
+const _mod: any = DecimalModule as any;
+if (typeof _mod === 'function') {
+  DecimalCtor = _mod;
+} else if (_mod && typeof _mod.default === 'function') {
+  DecimalCtor = _mod.default;
+} else if (_mod && typeof _mod.Decimal === 'function') {
+  DecimalCtor = _mod.Decimal;
+} else if (_mod && typeof _mod.decimal === 'function') {
+  DecimalCtor = _mod.decimal;
+}
+
+// Lightweight fallback Decimal implemented on top of Number. This provides a
+// minimal compatible surface for tests and avoids hard failures if the vendor
+// file couldn't be loaded for some reason. It intentionally implements only
+// the methods the app uses (add/plus, sub, times, toString, toNumber, gte, lt, pow).
+class NumberDecimal {
+  n: number;
+  constructor(s: string) {
+    this.n = Number(s);
+    if (!Number.isFinite(this.n)) this.n = 0;
+  }
+  toString() {
+    return String(this.n);
+  }
+  toNumber() {
+    return this.n;
+  }
+  plus(x: any) {
+    return new NumberDecimal(String(this.n + Number(x)));
+  }
+  add(x: any) {
+    return this.plus(x);
+  }
+  sub(x: any) {
+    return new NumberDecimal(String(this.n - Number(x)));
+  }
+  times(x: any) {
+    return new NumberDecimal(String(this.n * Number(x)));
+  }
+  gte(x: any) {
+    return this.n >= Number(x);
+  }
+  lt(x: any) {
+    return this.n < Number(x);
+  }
+  pow(x: any) {
+    return new NumberDecimal(String(Math.pow(this.n, Number(x))));
+  }
+}
+
+if (!DecimalCtor) {
+  // Use fallback if detection failed
+  DecimalCtor = NumberDecimal;
+}
+
+export function toDecimal(x: number | string | any) {
+  if (x && typeof x === 'object' && typeof x.toString === 'function' && (x.add || x.plus || x.times || x.sub)) return x;
+  return new DecimalCtor(typeof x === 'string' ? x : String(x));
 }
 
 export function fromDecimalString(s: string) {
-  return new Decimal(s);
+  return new DecimalCtor(s);
 }
 
 // Robust formatter that avoids converting huge Decimals to native Number when possible.

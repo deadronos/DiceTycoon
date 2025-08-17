@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './DicePanel.css';
 
 type DicePanelProps = {
   faces: number[]; // current face values for each die (1-6)
@@ -127,13 +128,8 @@ export default function DicePanel({ faces, rolling, animationLevels }: DicePanel
         return (
           <div key={i} className={`dt-dice-box`} data-testid={`panel-die-${i}`}>
             <div
-              className="dt-die-inner"
-              style={{
-                transform,
-                transitionDuration: `${durationMs}ms`,
-                transitionDelay: `${delayMs}ms`,
-                transformOrigin: 'center center',
-              }}
+              className={`dt-die-inner face-${f} anim-${Math.min(6, Math.max(0, Math.floor(animLevel)))}`}
+              style={{ transform }}
             >
               <svg className="dt-die-svg" viewBox="0 0 100 100" width="64" height="64" aria-hidden>
                 <rect x="4" y="4" width="92" height="92" rx="12" ry="12" fill="#fff" stroke="#e1e1e1" />
