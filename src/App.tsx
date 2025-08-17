@@ -3,22 +3,33 @@ import { toDecimal, formatDecimal, fromDecimalString } from './utils/decimal';
 import Header from './components/Header';
 import DiceGrid from './components/DiceGrid';
 import Controls from './components/Controls';
+import DicePanel from './components/DicePanel';
+import Notifications from './components/Notifications';
 import './App.css';
 
 type Die = { id: number; locked: boolean; level: number; animationLevel?: number; multiplier?: string };
+
+type DieState = Die & { face: number };
 
 const STORAGE_KEY = 'dice-tycoon-save-v1';
 
 export default function App() {
   const [credits, setCredits] = useState(() => toDecimal('1000'));
-  const [dice, setDice] = useState<Die[]>(() => {
-    const arr: Die[] = [];
-    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, multiplier: toDecimal(1).toString() });
+  const [dice, setDice] = useState<DieState[]>(() => {
+    const arr: DieState[] = [];
+    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
     return arr;
   });
   const [autoroll, setAutoroll] = useState(false);
   const [cooldownMs, setCooldownMs] = useState(2000);
   const [autorollLevel, setAutorollLevel] = useState(0);
+  const [rolling, setRolling] = useState(false);
+  const [notifications, setNotifications] = useState<{ id: number; message: string }[]>([]);
+  const nextNotifId = useRef(1);
+  const [lastRoll, setLastRoll] = useState<{
+    entries: { id: number; face: number; multiplier: string; earned: string }[];
+    total: string;
+  } | null>(null);
   const autorollRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -41,12 +52,33 @@ export default function App() {
   }, [credits, dice, autoroll, cooldownMs, autorollLevel]);
 
   function doRoll() {
-    let sum = toDecimal(0);
-    setDice(prev => {
-      prev.forEach(d => { if (!d.locked) { const face = Math.floor(Math.random() * 6) + 1; sum = sum.add(face); } });
-      return prev;
+    // trigger panel rolling animation
+    setRolling(true);
+    // stop rolling after animation duration
+    window.setTimeout(() => setRolling(false), 800);
+
+    // compute new faces immutably and apply per-die multiplier to earned credits
+    let earned = toDecimal(0);
+    const entries: { id: number; face: number; multiplier: string; earned: string }[] = [];
+    const newDice = dice.map(d => {
+      if (d.locked) return d;
+      const face = Math.floor(Math.random() * 6) + 1;
+      const mult = toDecimal(d.multiplier || '1');
+      const gained = mult.times(face);
+      earned = earned.add(gained);
+      entries.push({ id: d.id, face, multiplier: mult.toString(), earned: gained.toString() });
+      return { ...d, face };
     });
-    setCredits(c => c.add(sum));
+    setDice(newDice);
+    setCredits(c => c.add(earned));
+    setLastRoll({ entries, total: earned.toString() });
+  }
+
+  // helper to push notifications
+  function pushNotification(message: string, ttl = 1500) {
+    const id = nextNotifId.current++;
+    setNotifications(n => [...n, { id, message }]);
+    window.setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), ttl);
   }
 
   // helper to spend credits (simple number-based check)
@@ -56,6 +88,8 @@ export default function App() {
       setCredits(toDecimal(current - amount));
       return true;
     }
+    // push a queued notification for insufficient funds
+    pushNotification('Insufficient credits');
     return false;
   }
 
@@ -98,11 +132,27 @@ export default function App() {
 
   return (
     <div className="dt-container">
+      <div className="dt-credits-topright">Credits: {formatDecimal(credits)}</div>
+      <DicePanel faces={dice.map(d => d.face)} rolling={rolling} animationLevels={dice.map(d => d.animationLevel || 0)} />
       <div className="dt-header"><Header credits={formatDecimal(credits)} /></div>
-      <div className="dt-layout">
-        <div><DiceGrid dice={dice} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} /></div>
-        <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} /></div>
+      <div className="dt-last-roll-area">
+        <div className="dt-last-roll-title">Last Roll:</div>
+        {lastRoll ? (
+          <div className="dt-last-roll-expression">
+            {lastRoll.entries.map((e, idx) => (
+              <span key={e.id} className="dt-last-roll-item">{`[${e.id+1}] ${e.face} × ${Number(e.multiplier).toFixed(2)}`}{idx < lastRoll.entries.length - 1 ? ' + ' : ''}</span>
+            ))}
+            <span className="dt-last-roll-total"> = {formatDecimal(toDecimal(lastRoll.total))}</span>
+          </div>
+        ) : (
+          <div className="dt-last-roll-expression">—</div>
+        )}
       </div>
+      <div className="dt-layout">
+        <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} /></div>
+        <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} affordable={{ autorollUpgrade: Number(credits.toString()) >= 1000 * Math.pow(2, autorollLevel) }} /></div>
+      </div>
+  <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
     </div>
   );
 }

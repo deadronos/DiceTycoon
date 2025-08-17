@@ -428,3 +428,4 @@ state.dice[i].multiplier = new Decimal(saved.dice[i].multiplier);
 - Balancing exponential progression requires playtesting; provide telemetry counters for tuning.
 
 ---
+>

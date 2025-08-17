@@ -1,6 +1,6 @@
 .dt-container { padding: 20px; }
 .dt-header { text-align: center; margin-bottom: 12px; }
-.dt-credits { font-size: 28px; font-weight: 700; color: #6C5CE7; }
+.dt-credits-topright { position: absolute; top: 12px; right: 20px; font-size: 20px; font-weight: 700; color: #6C5CE7; }
 .dt-dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .dt-die-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; min-height: 140px; position: relative; }
 .dt-locked { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.6); border-radius: 10px; }
@@ -14,3 +14,40 @@
 .dt-gap-8 { height: 8px; }
 .dt-margin-top-8 { margin-top: 8px; }
 .dt-ml-6 { margin-left: 6px; }
+
+/* Top dice panel */
+.dt-dice-panel { display: flex; gap: 12px; justify-content: center; margin-bottom: 12px; }
+.dt-dice-box { width: 72px; height: 72px; perspective: 400px; }
+.dt-die-inner { width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(145deg,#ffffff,#e6e6e6); display:flex; align-items:center; justify-content:center; box-shadow: 8px 12px 24px rgba(0,0,0,0.35); transition-property: transform; transition-timing-function: cubic-bezier(.2,.9,.3,1); transform-style: preserve-3d; }
+.dt-die-face { font-size: 24px; font-weight: 700; color: #222; }
+
+/* subtle shaded 3D look */
+.dt-die-inner::after { content: ''; position: absolute; inset: 0; border-radius: 8px; box-shadow: inset -12px -12px 32px rgba(0,0,0,0.08); pointer-events: none; }
+
+/* pip grid for dice face */
+.dt-die-face-pips { display:flex; align-items:center; justify-content:center; }
+.dt-pip-grid { width: 56px; height: 56px; display:grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 6px; }
+.dt-pip { width: 12px; height: 12px; border-radius: 50%; background: transparent; opacity: 0.25; }
+.dt-pip-on { background: #222; opacity: 1; }
+
+/* disabled buttons */
+button[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* toast */
+.dt-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; background: rgba(0,0,0,0.8); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+
+/* notifications (queued) */
+.dt-notifications { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; display: flex; flex-direction: column; gap: 8px; align-items: center; z-index: 60; }
+.dt-notification { background: rgba(0,0,0,0.85); color: white; padding: 10px 14px; border-radius: 8px; display:flex; gap:12px; align-items:center; min-width: 200px; }
+.dt-notification-message { flex: 1; }
+.dt-notification-dismiss { background: transparent; color: #ddd; border: none; font-size: 18px; cursor: pointer; }
+
+/* visually-hidden (for test spans) */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Last Roll area centered under dice panel */
+.dt-last-roll-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px; }
+.dt-last-roll-title { font-weight: 700; color: #6C5CE7; margin-bottom: 6px; }
+.dt-last-roll-expression { background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; min-width: 480px; text-align: center; color: #ddd; }
+.dt-last-roll-item { margin: 0 4px; }
+.dt-last-roll-total { margin-left: 8px; font-weight: 700; color: #fff; }
