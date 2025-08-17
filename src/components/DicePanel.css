@@ -1,0 +1,53 @@
+.dt-dice-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px;
+  justify-content: center;
+}
+
+.dt-dice-box {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 800px;
+}
+
+.dt-die-inner {
+  width: 64px;
+  height: 64px;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+.dt-die-svg {
+  display: block;
+}
+
+/* pip grid fallback in case JS-driven SVG isn't used */
+.dt-pip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-items: center;
+}
+
+.dt-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.dt-pip-on {
+  background: #222;
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './DicePanel.css';
 
 type DicePanelProps = {
   faces: number[]; // current face values for each die (1-6)
