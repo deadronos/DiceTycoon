@@ -16,7 +16,7 @@
     <main>
       <section id="dice-panel">
         <div id="dice-display">
-          <div id="die" class="die">6</div>
+            <div id="multi-dice" class="multi-dice" aria-hidden="false"></div>
           <button id="roll-btn">Roll</button>
           <div id="last-roll">Last: -</div>
         </div>
@@ -40,10 +40,43 @@
     </main>
 
     <footer>
+      <div id="controls" class="controls">
+        <button id="reset-btn" class="btn-small">Reset</button>
+        <button id="save-btn" class="btn-small">Save</button>
+        <button id="export-btn" class="btn-small">Export</button>
+        <button id="import-btn" class="btn-small">Import</button>
+      </div>
       <small>Prototype: HTML/CSS/JS · LocalStorage save</small>
     </footer>
   </div>
 
+  <div id="data-modal" class="data-modal" aria-hidden="true">
+    <div class="data-modal-content">
+      <h3>Export / Import Save Data</h3>
+      <textarea id="data-text" rows="8"></textarea>
+      <div id="data-preview" class="data-preview" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button id="data-import" class="btn-small">Import</button>
+        <button id="data-copy" class="btn-small">Copy</button>
+        <button id="data-close" class="btn-small">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="data-modal" aria-hidden="true">
+    <div class="data-modal-content">
+      <h3 id="confirm-title">Confirm</h3>
+      <p id="confirm-body">Are you sure?</p>
+      <div class="modal-actions">
+        <button id="confirm-yes" class="btn-small">Yes</button>
+        <button id="confirm-no" class="btn-small">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="bignum.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
