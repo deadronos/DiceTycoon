@@ -11,5 +11,13 @@
     "outDir": "dist",
     "resolveJsonModule": true
   },
-  "include": ["src", "tests", "libs/@patashu/break_eternity.js/dist/break_eternity.cjs.js", "libs/@patashu/break_eternity.js/dist/break_eternity.esm.js", "libs/@patashu/break_eternity.js/dist/break_eternity.js"]
+  "typeRoots": ["./types", "./node_modules/@types"],
+  "include": [
+    "src",
+    "tests",
+    "types",
+    "libs/@patashu/break_eternity.js/dist/break_eternity.cjs.js",
+    "libs/@patashu/break_eternity.js/dist/break_eternity.esm.js",
+    "libs/@patashu/break_eternity.js/dist/break_eternity.js"
+  ]
 }
