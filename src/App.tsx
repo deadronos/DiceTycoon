@@ -14,6 +14,49 @@ type DieState = Die & { face: number };
 const STORAGE_KEY = 'dice-tycoon-save-v1';
 
 export default function App() {
+  // Import gamestate from JSON in textbox
+  function importGameState() {
+    try {
+      const parsed = JSON.parse(exportImportValue);
+      setCredits(fromDecimalString(parsed.credits));
+      setDice(parsed.dice.map((d: any) => ({ ...d })));
+      setAutoroll(Boolean(parsed.autoroll));
+      setCooldownMs(parsed.cooldownMs || 2000);
+      setAutorollLevel(parsed.autorollLevel || 0);
+      setLastRoll(null);
+      setShowExportImport('none');
+      pushNotification('Game state imported!');
+    } catch (e) {
+      pushNotification('Import failed: Invalid JSON');
+    }
+  }
+  // Export current gamestate as JSON
+  function exportGameState() {
+    const toExport = { credits: credits.toString(), dice, autoroll, cooldownMs, autorollLevel };
+    setExportImportValue(JSON.stringify(toExport, null, 2));
+    setShowExportImport('export');
+  }
+  // Helper to get default dice state
+  function getDefaultDice(): DieState[] {
+    const arr: DieState[] = [];
+    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, ascensionLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
+    return arr;
+  }
+
+  // Reset game state to defaults
+  function resetGame() {
+    setCredits(toDecimal('1000'));
+    setDice(getDefaultDice());
+    setAutoroll(false);
+    setCooldownMs(2000);
+    setAutorollLevel(0);
+    setLastRoll(null);
+    setNotifications([]);
+    setShowExportImport('none');
+    setExportImportValue('');
+    localStorage.removeItem(STORAGE_KEY);
+    pushNotification('Game reset!');
+  }
   const [credits, setCredits] = useState(() => toDecimal('1000'));
   const [dice, setDice] = useState<DieState[]>(() => {
     const arr: DieState[] = [];
@@ -31,6 +74,10 @@ export default function App() {
     total: string;
   } | null>(null);
   const autorollRef = useRef<number | null>(null);
+
+  // Export/Import textbox state
+  const [showExportImport, setShowExportImport] = useState<'none' | 'export' | 'import'>('none');
+  const [exportImportValue, setExportImportValue] = useState('');
 
   useEffect(() => {
     try {
@@ -159,13 +206,37 @@ export default function App() {
         ) : (
           <div className="dt-last-roll-expression">—</div>
         )}
-  {/* removed duplicate center Controls - keep right-side Controls in layout */}
       </div>
       <div className="dt-layout">
-  <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} onAscend={ascendDie} /></div>
+        <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} onAscend={ascendDie} /></div>
         <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} affordable={{ autorollUpgrade: Number(credits.toString()) >= 1000 * Math.pow(2, autorollLevel) }} /></div>
       </div>
-  <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
+      {/* Bottom controls for reset/export/import */}
+      <div className="dt-bottom-controls" style={{ marginTop: 24, textAlign: 'center' }}>
+        <button onClick={resetGame} style={{ marginRight: 8 }}>Reset</button>
+        <button onClick={exportGameState} style={{ marginRight: 8 }}>Export</button>
+        <button onClick={() => { setShowExportImport('import'); setExportImportValue(''); }} style={{ marginRight: 8 }}>Import</button>
+      </div>
+      {/* Export/Import textbox */}
+      {showExportImport !== 'none' && (
+        <div className="dt-export-import-area" style={{ margin: '16px auto', maxWidth: 480 }}>
+          <textarea
+            value={exportImportValue}
+            onChange={e => setExportImportValue(e.target.value)}
+            rows={8}
+            style={{ width: '100%', fontFamily: 'monospace', fontSize: 14 }}
+            placeholder={showExportImport === 'import' ? 'Paste gamestate JSON here...' : ''}
+            readOnly={showExportImport === 'export'}
+          />
+          <div style={{ marginTop: 8, textAlign: 'right' }}>
+            {showExportImport === 'import' && (
+              <button onClick={importGameState} style={{ marginRight: 8 }}>Import</button>
+            )}
+            <button onClick={() => { setShowExportImport('none'); setExportImportValue(''); }}>Close</button>
+          </div>
+        </div>
+      )}
+      <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
     </div>
   );
 }
