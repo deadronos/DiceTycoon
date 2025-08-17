@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dice Tycoon — UI Mockup</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#111827;
+    --muted:#9ca3af;
+    --accent:#6C5CE7;
+    --accent-2:#00B894;
+    --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --glass-3: rgba(255,255,255,0.015);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;}
+  body{background:linear-gradient(180deg,var(--bg),#071020);color:#e6eef6;display:flex;align-items:flex-start;justify-content:center;padding:28px;}
+  .app{max-width:1200px;width:100%;display:grid;grid-template-columns: 1fr 340px;gap:20px}
+  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .credits{font-size:28px;font-weight:700;color:var(--accent)}
+  .controls-mini{color:var(--muted);font-size:14px}
+  .board{background:linear-gradient(180deg,var(--glass),transparent);padding:18px;border-radius:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start}
+  .card{background:linear-gradient(180deg,var(--card),#0b1220);padding:12px;border-radius:10px;min-height:160px;position:relative;overflow:hidden;box-shadow: 0 6px 20px rgba(4,6,12,0.6);}
+  .lock-overlay{position:absolute;inset:0;background:linear-gradient(180deg, rgba(2,6,23,0.8), rgba(2,4,10,0.6));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);backdrop-filter: blur(5px);font-size:14px}
+  .die-face{height:80px;border-radius:8px;background:linear-gradient(180deg,#101827,#0b1220);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;margin-bottom:10px;transition:transform .9s cubic-bezier(.2,.9,.3,1)}
+  .die-face.rolling{animation:rollAnim .8s linear}
+  @keyframes rollAnim{from{transform:rotateX(0deg) translateY(0)}50%{transform:rotateX(180deg) translateY(-6px)}to{transform:rotateX(360deg) translateY(0)}}
+  .meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+  .btn{background:linear-gradient(180deg,var(--accent),#5643c9);border:none;padding:10px 14px;border-radius:8px;color:white;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(108,92,231,0.14)}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;font-weight:600}
+  .sidebar{background:linear-gradient(180deg,var(--glass-2),transparent);padding:16px;border-radius:12px;min-height:420px;display:flex;flex-direction:column;gap:12px}
+  .roll-big{display:flex;gap:8px;align-items:center;justify-content:center;padding:18px;border-radius:12px;background:linear-gradient(180deg,var(--accent),#3f2fa8);font-weight:800;font-size:20px;cursor:pointer}
+  .autoroll{background:linear-gradient(90deg,#071022,rgba(255,255,255,0.01));padding:12px;border-radius:8px}
+  .earnings{position:absolute;right:10px;top:10px;font-size:12px;opacity:0.95;color:var(--accent-2)}
+  .floating{position:absolute;pointer-events:none;right:12px;top:48px;display:flex;flex-direction:column;gap:6px}
+  .float-item{background:linear-gradient(90deg, rgba(1,6,8,0.9), rgba(5,10,12,0.6));padding:6px 10px;border-radius:8px;color:#b8ffd6;font-weight:700;font-size:13px;transform:translateY(0);opacity:1;animation:floatUp 1.2s ease forwards}
+  @keyframes floatUp{to{transform:translateY(-28px);opacity:0;}}
+  .small{font-size:12px;color:var(--muted)}
+  .level-row{display:flex;gap:6px;align-items:center}
+  .cost{font-weight:800;color:#ffd28a}
+  footer{grid-column:1/-1;color:var(--muted);font-size:13px;margin-top:6px}
+  .locked-btn{background:#2b2f36;padding:8px 10px;border-radius:8px;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+  /* responsive */
+  @media(max-width:980px){.app{grid-template-columns:1fr;}.board{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.board{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app" aria-live="polite">
+  <header>
+    <div>
+      <div class="credits" id="credits">Credits: 0</div>
+      <div class="controls-mini">Rank: Rookie · Prestige: 0</div>
+    </div>
+    <div class="controls-mini">Save · Export · Settings</div>
+  </header>
+
+  <main class="board" id="diceBoard">
+    <!-- 6 cards injected by JS -->
+  </main>
+
+  <aside class="sidebar">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:700">Controls</div>
+      <div class="small">v0.1 UI mock</div>
+    </div>
+
+    <div class="roll-big btn" id="rollBtn" role="button" aria-pressed="false">
+      Roll
+    </div>
+
+    <div class="autoroll" aria-label="Autoroll Controls">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:700">Autoroll</div>
+        <div class="small" id="autorollStatus">OFF</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn secondary" id="toggleAuto">Toggle</button>
+        <div style="flex:1;display:flex;flex-direction:column;">
+          <div class="small">Cooldown (s)</div>
+          <input id="autoCooldown" type="range" min="0.2" max="3" step="0.1" value="1" />
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="locked-btn" id="upgradeAuto">Upgrade (cost: <span id="autoCost">10</span>)</button>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-weight:700;margin-bottom:6px">Recent</div>
+      <div class="small" id="recent">No rolls yet</div>
+    </div>
+  </aside>
+
+  <footer>Prototype: animation unlocks, level-up, unlock die, autoroll demo</footer>
+</div>
+
+<script>
+/*
+  Prototype note:
+  - Replace MockDecimal with Decimal from @Patashu/break_eternity.js in production.
+*/
+class MockDecimal {
+  constructor(n=0){ this.v = (typeof n === 'string') ? parseFloat(n) : Number(n) || 0; }
+  plus(d){ return new MockDecimal(this.v + (d instanceof MockDecimal ? d.v : Number(d))); }
+  times(d){ return new MockDecimal(this.v * (d instanceof MockDecimal ? d.v : Number(d))); }
+  pow(n){ return new MockDecimal(Math.pow(this.v, n)); }
+  toNumber(){ return this.v; }
+  toString(){ return this.v.toLocaleString(undefined,{maximumFractionDigits:2}); }
+}
+
+// Utility format for big numbers (simplified)
+function fmt(dec){
+  const n = dec instanceof MockDecimal ? dec.v : Number(dec);
+  if(n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if(n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if(n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(2)+'K';
+  return n.toFixed(2);
+}
+
+const MAX_DICE = 6;
+let state = {
+  credits: new MockDecimal(150),
+  dice: [],
+  autoroll: { enabled:false, cooldown:new MockDecimal(1.0), timerId:null, level:0, cost: new MockDecimal(10) }
+};
+
+function createDie(i){
+  return {
+    id: i,
+    unlocked: i===1, // only die 1 unlocked initially
+    level: 0,
+    multiplier: new MockDecimal(1),
+    animationLevel: 0,
+    unlockCost: new MockDecimal(10 * i),
+    levelCost: new MockDecimal(5 * Math.pow(2,i-1))
+  }
+}
+
+for(let i=1;i<=MAX_DICE;i++) state.dice.push(createDie(i));
+
+const board = document.getElementById('diceBoard');
+const creditsEl = document.getElementById('credits');
+const recentEl = document.getElementById('recent');
+const rollBtn = document.getElementById('rollBtn');
+const autorollStatus = document.getElementById('autorollStatus');
+const toggleAuto = document.getElementById('toggleAuto');
+const autoCooldown = document.getElementById('autoCooldown');
+const autoCost = document.getElementById('autoCost');
+const upgradeAuto = document.getElementById('upgradeAuto');
+
+function render(){
+  creditsEl.textContent = 'Credits: ' + fmt(state.credits);
+  board.innerHTML = '';
+  for(const die of state.dice){
+    const card = document.createElement('div');
+    card.className = 'card';
+    const floatWrap = document.createElement('div');
+    floatWrap.className = 'floating';
+    card.appendChild(floatWrap);
+
+    if(!die.unlocked){
+      const overlay = document.createElement('div');
+      overlay.className = 'lock-overlay';
+      overlay.innerHTML = `<div style="font-size:14px;font-weight:800">Locked Die</div>
+        <div class="small">Unlock cost: <span class="cost">${fmt(die.unlockCost)}</span></div>`;
+      const btn = document.createElement('button');
+      btn.className = 'locked-btn';
+      btn.textContent = 'Unlock';
+      btn.onclick = ()=>{
+        if(state.credits.v >= die.unlockCost.v){
+          state.credits = state.credits.plus(-die.unlockCost.v);
+          die.unlocked = true;
+          render();
+        } else {
+          showRecent('Not enough credits');
+        }
+      };
+      overlay.appendChild(btn);
+      card.appendChild(overlay);
+    } else {
+      const face = document.createElement('div');
+      face.className = 'die-face';
+      face.textContent = Math.max(1, (Math.floor(Math.random()*6)+1)); // placeholder until roll
+      face.id = 'face-'+die.id;
+      card.appendChild(face);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = `<div class="level-row"><div class="small">Level</div> <div style="font-weight:800;margin-left:6px">${die.level}</div></div>
+        <div><div class="small">×${fmt(die.multiplier)}</div></div>`;
+      card.appendChild(meta);
+
+      const levelBtn = document.createElement('button');
+      levelBtn.className = 'btn secondary';
+      levelBtn.style.marginTop = '8px';
+      levelBtn.textContent = `Level Up (cost ${fmt(die.levelCost)})`;
+      levelBtn.onclick = ()=>{
+        if(state.credits.v >= die.levelCost.v){
+          state.credits = state.credits.plus(-die.levelCost.v);
+          die.level += 1;
+          // simple multiplier growth: 1.5^level
+          die.multiplier = new MockDecimal(1.0 * Math.pow(1.5,die.level));
+          // increase next cost
+          die.levelCost = new MockDecimal(die.levelCost.v * 1.8);
+          showFloat(card, `Level ${die.level}`);
+          render();
+        } else showRecent('Not enough credits');
+      };
+      card.appendChild(levelBtn);
+
+      const animBtn = document.createElement('button');
+      animBtn.className = 'locked-btn';
+      animBtn.style.marginTop = '8px';
+      animBtn.textContent = die.animationLevel ? `Anim L${die.animationLevel}` : 'Unlock Anim';
+      animBtn.onclick = ()=>{
+        const cost = new MockDecimal(8 * (die.animationLevel+1));
+        if(state.credits.v >= cost.v){
+          state.credits = state.credits.plus(-cost.v);
+          die.animationLevel += 1;
+          showFloat(card, `Anim L${die.animationLevel}`);
+          render();
+        } else showRecent('Not enough credits');
+      };
+      card.appendChild(animBtn);
+
+      // earnings label
+      const earnings = document.createElement('div');
+      earnings.className = 'earnings';
+      earnings.textContent = '';
+      card.appendChild(earnings);
+    }
+    board.appendChild(card);
+  }
+  autorollStatus.textContent = state.autoroll.enabled ? 'ON' : 'OFF';
+  autoCost.textContent = fmt(state.autoroll.cost);
+  recentEl.textContent = 'Credits: ' + fmt(state.credits) + ' · Dice unlocked: ' + state.dice.filter(d=>d.unlocked).length;
+}
+
+function showFloat(card, text){
+  const wrap = card.querySelector('.floating');
+  const el = document.createElement('div');
+  el.className = 'float-item';
+  el.textContent = text;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 1200);
+}
+
+function showRecent(msg){
+  recentEl.textContent = msg;
+  setTimeout(()=>recentEl.textContent = 'Credits: ' + fmt(state.credits) + ' · Dice unlocked: ' + state.dice.filter(d=>d.unlocked).length, 1300);
+}
+
+function rollOnce(isAuto=false){
+  if(!isAuto){
+    // block roll button for punctuation
+    rollBtn.classList.add('disabled');
+    rollBtn.style.opacity = '0.9';
+  }
+  let total = new MockDecimal(0);
+  const cards = document.querySelectorAll('.card');
+  state.dice.forEach((die, idx)=>{
+    if(!die.unlocked) return;
+    // animation duration scales with animationLevel
+    const animEl = document.getElementById('face-'+die.id);
+    if(animEl){
+      animEl.classList.remove('rolling');
+      // set random face now for immediate change when rolling ends
+      const faceVal = Math.floor(Math.random()*6)+1;
+      animEl.textContent = faceVal;
+      // trigger animation
+      void animEl.offsetWidth;
+      animEl.classList.add('rolling');
+    }
+    // compute earnings
+    const faceValue = new MockDecimal(Math.floor(Math.random()*6)+1);
+    const earn = faceValue.times(die.multiplier);
+    total = total.plus(earn);
+  });
+
+  // add to credits after animation
+  setTimeout(()=>{
+    state.credits = state.credits.plus(total);
+    showRecent('+' + fmt(total) + ' credits');
+    // show floating on first unlocked die card
+    const firstCard = document.querySelector('.card');
+    if(firstCard) showFloat(firstCard, '+' + fmt(total));
+    if(!isAuto){
+      rollBtn.classList.remove('disabled');
+      rollBtn.style.opacity = '1';
+    }
+    render();
+  }, 900);
+}
+
+rollBtn.onclick = ()=>{
+  rollOnce(false);
+};
+
+toggleAuto.onclick = ()=>{
+  state.autoroll.enabled = !state.autoroll.enabled;
+  if(state.autoroll.enabled){
+    startAutoroll();
+  } else stopAutoroll();
+  render();
+};
+
+function startAutoroll(){
+  stopAutoroll();
+  const ms = Math.max(120, state.autoroll.cooldown.v * 1000);
+  state.autoroll.timerId = setInterval(()=> rollOnce(true), ms);
+}
+
+function stopAutoroll(){
+  if(state.autoroll.timerId) { clearInterval(state.autoroll.timerId); state.autoroll.timerId = null; }
+}
+
+autoCooldown.oninput = (e)=>{
+  state.autoroll.cooldown = new MockDecimal(Number(e.target.value));
+  if(state.autoroll.enabled) startAutoroll();
+  render();
+};
+
+upgradeAuto.onclick = ()=>{
+  const cost = state.autoroll.cost;
+  if(state.credits.v >= cost.v){
+    state.credits = state.credits.plus(-cost.v);
+    state.autoroll.level += 1;
+    // reduce cooldown: each level reduces by 10%
+    state.autoroll.cooldown = new MockDecimal(Math.max(0.2, state.autoroll.cooldown.v * 0.9));
+    state.autoroll.cost = new MockDecimal(state.autoroll.cost.v * 2.5);
+    showRecent('Autoroll level ' + state.autoroll.level);
+    if(state.autoroll.enabled) startAutoroll();
+    render();
+  } else showRecent('Not enough credits');
+};
+
+// initial rendering
+render();
+</script>
+</body>
+</html>
