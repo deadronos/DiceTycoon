@@ -37,3 +37,5 @@ License
 - Respect the upstream license in `dist/LICENSE.txt` when redistributing.
 
 If you want, I can also add the specific commit/hash used to create this vendor copy — tell me the upstream commit or I can fetch the upstream repo and determine a matching commit.
+
+<!-- markdownlint-disable-file -->
