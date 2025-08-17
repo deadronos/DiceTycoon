@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Decimal } from '@patashu/break_eternity.js';
+import Decimal from '@patashu/break_eternity.js';
+type DecimalInstance = InstanceType<typeof Decimal>;
+
+// Example: typing state that holds a Decimal instance
+const [credits, setCredits] = useState<DecimalInstance>(() => toDecimal('0'));
+
 import { toDecimal, formatDecimal, fromDecimalString, DecimalHelpers } from './utils/decimal';
 import Header from './components/Header';
 import DiceGrid from './components/DiceGrid';
@@ -58,7 +63,7 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY);
     pushNotification('Game reset!');
   }
-  const [credits, setCredits] = useState(() => toDecimal('1000'));
+  const [credits, setCredits] = useState<DecimalInstance>(() => toDecimal('0'));
   const [dice, setDice] = useState<DieState[]>(() => {
     const arr: DieState[] = [];
     for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, ascensionLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
@@ -131,7 +136,7 @@ export default function App() {
       return { ...d, face };
     });
     setDice(newDice);
-    setCredits((c: Decimal) => c.add(earned));
+    setCredits((c) => c.add(earned));
     setLastRoll({ entries, total: earned.toString() });
   }
 
@@ -147,7 +152,7 @@ export default function App() {
     const cost = toDecimal(amount);
     if (DecimalHelpers.gte(credits, cost)) {
       // Always use Decimal subtraction (no numeric fallback)
-      setCredits((c: Decimal) => c.sub(cost));
+      setCredits(c => c.sub(cost));
       return true;
     }
     pushNotification('Insufficient credits');
