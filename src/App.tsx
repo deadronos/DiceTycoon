@@ -7,7 +7,7 @@ import DicePanel from './components/DicePanel';
 import Notifications from './components/Notifications';
 import './App.css';
 
-type Die = { id: number; locked: boolean; level: number; animationLevel?: number; multiplier?: string };
+type Die = { id: number; locked: boolean; level: number; animationLevel?: number; multiplier?: string; ascensionLevel?: number };
 
 type DieState = Die & { face: number };
 
@@ -17,7 +17,7 @@ export default function App() {
   const [credits, setCredits] = useState(() => toDecimal('1000'));
   const [dice, setDice] = useState<DieState[]>(() => {
     const arr: DieState[] = [];
-    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
+    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, ascensionLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
     return arr;
   });
   const [autoroll, setAutoroll] = useState(false);
@@ -51,6 +51,15 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   }, [credits, dice, autoroll, cooldownMs, autorollLevel]);
 
+  function ascendDie(id: number) {
+    setDice(prev => {
+      const target = prev.find(d => d.id === id)!;
+      const cost = 1000 * Math.pow(4, (target.ascensionLevel || 0)); // exponential ascension cost
+      if (!spendCredits(cost)) return prev;
+      return prev.map(d => d.id === id ? { ...d, ascensionLevel: (d.ascensionLevel || 0) + 1, multiplier: toDecimal(1).toString(), level: 0 } : d);
+    });
+  }
+
   function doRoll() {
     // trigger panel rolling animation
     setRolling(true);
@@ -64,7 +73,10 @@ export default function App() {
       if (d.locked) return d;
       const face = Math.floor(Math.random() * 6) + 1;
       const mult = toDecimal(d.multiplier || '1');
-      const gained = mult.times(face);
+      // ascension factor defined as (ascensionLevel + 1) ^ 10 so default 0 => 1
+      const ascBase = (d.ascensionLevel ?? 0) + 1;
+      const ascFactor = toDecimal(ascBase).pow(10);
+      const gained = mult.times(face).times(ascFactor);
       earned = earned.add(gained);
       entries.push({ id: d.id, face, multiplier: mult.toString(), earned: gained.toString() });
       return { ...d, face };
@@ -140,16 +152,17 @@ export default function App() {
         {lastRoll ? (
           <div className="dt-last-roll-expression">
             {lastRoll.entries.map((e, idx) => (
-              <span key={e.id} className="dt-last-roll-item">{`[${e.id+1}] ${e.face} × ${Number(e.multiplier).toFixed(2)}`}{idx < lastRoll.entries.length - 1 ? ' + ' : ''}</span>
+              <span key={e.id} className="dt-last-roll-item">{`[${e.id+1}] ${e.face} × ${formatDecimal(toDecimal(e.multiplier))}`}{idx < lastRoll.entries.length - 1 ? ' + ' : ''}</span>
             ))}
             <span className="dt-last-roll-total"> = {formatDecimal(toDecimal(lastRoll.total))}</span>
           </div>
         ) : (
           <div className="dt-last-roll-expression">—</div>
         )}
+  {/* removed duplicate center Controls - keep right-side Controls in layout */}
       </div>
       <div className="dt-layout">
-        <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} /></div>
+  <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} onAscend={ascendDie} /></div>
         <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} affordable={{ autorollUpgrade: Number(credits.toString()) >= 1000 * Math.pow(2, autorollLevel) }} /></div>
       </div>
   <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
