@@ -1,6 +1,6 @@
 # Dice Tycoon — Project Requirements Summary
 
-I drafted a focused project requirements summary for a dice-based incremental/idle game that uses @Patashu/break_eternity.js and the Decimal object for arbitrary-precision numbers. Below are the goals, gameplay mechanics, data modeling, UI/UX expectations, technical requirements, acceptance criteria, and suggested milestones to take this from concept to an MVP.
+This document provides a focused project requirements summary for a dice-based incremental/idle game that uses @Patashu/break_eternity.js and the Decimal object for arbitrary-precision numbers. The goals, gameplay mechanics, data modeling, UI/UX expectations, technical requirements, acceptance criteria, and suggested milestones are outlined to take this from concept to an MVP.
 
 ---
 
