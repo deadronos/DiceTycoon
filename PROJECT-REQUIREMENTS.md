@@ -429,3 +429,5 @@ state.dice[i].multiplier = new Decimal(saved.dice[i].multiplier);
 
 ---
 >
+
+<!-- markdownlint-disable-file -->
