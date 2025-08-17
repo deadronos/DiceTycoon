@@ -77,7 +77,7 @@ export default function App() {
   function unlockAnim(id: number) {
     setDice(prev => {
       const target = prev.find(d => d.id === id)!;
-      const cost = 200 * (target.animationLevel + 1);
+      const cost = 200 * ((target.animationLevel ?? 0) + 1);
       if (!spendCredits(cost)) return prev;
       return prev.map(d => d.id === id ? { ...d, animationLevel: (d.animationLevel || 0) + 1 } : d);
     });
