@@ -114,3 +114,5 @@ Next steps
 - Convert prototype to React/TS components and wire to game logic.
 - Add polish: sound, particle effects, animation frames, playtesting adjustments.
 ```
+
+<!-- markdownlint-disable-file -->
