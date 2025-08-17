@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
-dist/
+# Note: `dist/` is intentionally not ignored because we will commit built site to `docs/`.
 build/
 
 # Environment files
