@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Decimal } from '@patashu/break_eternity.js';
 import { toDecimal, formatDecimal, fromDecimalString, DecimalHelpers } from './utils/decimal';
 import Header from './components/Header';
 import DiceGrid from './components/DiceGrid';
@@ -130,7 +131,7 @@ export default function App() {
       return { ...d, face };
     });
     setDice(newDice);
-    setCredits((c: import('@patashu/break_eternity.js').Decimal) => c.add(earned));
+    setCredits((c: Decimal) => c.add(earned));
     setLastRoll({ entries, total: earned.toString() });
   }
 
@@ -146,7 +147,7 @@ export default function App() {
     const cost = toDecimal(amount);
     if (DecimalHelpers.gte(credits, cost)) {
       // Always use Decimal subtraction (no numeric fallback)
-      setCredits((c: import('@patashu/break_eternity.js').Decimal) => c.sub(cost));
+      setCredits((c: Decimal) => c.sub(cost));
       return true;
     }
     pushNotification('Insufficient credits');
