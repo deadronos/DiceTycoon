@@ -71,7 +71,7 @@ DiceTycoon is an incremental/idle game where players roll up to 6 dice simultane
   - Responsive design for various screen sizes
   - Accessibility features for keyboard navigation
 
-## Decimal Math Operations (CRITICAL)
+## Decimal Math Operations (Critical)
 - **NEVER use native Number for game values** - use Decimal exclusively
 - Common operations with Decimal:
 ````javascript
