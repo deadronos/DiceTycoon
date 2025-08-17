@@ -1,5 +1,5 @@
 import React from 'react';
-import { toDecimal, formatDecimal } from '../utils/decimal';
+import { toDecimal, formatDecimal, DecimalHelpers } from '../utils/decimal';
 import DieCard from './DieCard';
 
 type Die = { id: number; locked: boolean; level: number };
@@ -18,7 +18,7 @@ export default function DiceGrid({ dice, credits, onLevelUp, onUnlock, onAnimUnl
         const animCost = formatDecimal(animCostDec);
         const ascCost = formatDecimal(ascCostDec);
         return (
-          <DieCard key={d.id} die={d} onLevelUp={onLevelUp} onUnlock={onUnlock} onAnimUnlock={onAnimUnlock} onAscend={onAscend} affordable={{ unlock: available >= Number(unlockCostDec.toString()), levelUp: available >= Number(levelUpCostDec.toString()), anim: available >= Number(animCostDec.toString()), ascend: available >= Number(ascCostDec.toString()) }} />
+          <DieCard key={d.id} die={d} onLevelUp={onLevelUp} onUnlock={onUnlock} onAnimUnlock={onAnimUnlock} onAscend={onAscend} affordable={{ unlock: DecimalHelpers.gte(credits, unlockCostDec), levelUp: DecimalHelpers.gte(credits, levelUpCostDec), anim: DecimalHelpers.gte(credits, animCostDec), ascend: DecimalHelpers.gte(credits, ascCostDec) }} />
         );
       })}
     </div>

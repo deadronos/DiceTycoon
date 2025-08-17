@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { toDecimal, formatDecimal, fromDecimalString } from './utils/decimal';
+import { toDecimal, formatDecimal, fromDecimalString, DecimalHelpers } from './utils/decimal';
 import Header from './components/Header';
 import DiceGrid from './components/DiceGrid';
 import Controls from './components/Controls';
@@ -140,14 +140,13 @@ export default function App() {
     window.setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), ttl);
   }
 
-  // helper to spend credits (simple number-based check)
-  function spendCredits(amount: number) {
-    const current = Number(credits.toString());
-    if (current >= amount) {
-      setCredits(toDecimal(current - amount));
+  // helper to spend credits using Decimal comparisons
+  function spendCredits(amount: number | string | any) {
+    const cost = toDecimal(amount);
+    if (DecimalHelpers.gte(credits, cost)) {
+      setCredits(c => c.sub ? c.sub(cost) : toDecimal(Number(c.toString()) - Number(cost.toString())));
       return true;
     }
-    // push a queued notification for insufficient funds
     pushNotification('Insufficient credits');
     return false;
   }
@@ -177,8 +176,8 @@ export default function App() {
   }
 
   function purchaseAutorollUpgrade() {
-    const cost = 1000 * Math.pow(2, autorollLevel);
-    if (!spendCredits(cost)) return;
+    const costDec = toDecimal(1000).times(toDecimal(2).pow(autorollLevel));
+    if (!spendCredits(costDec)) return;
     setAutorollLevel(l => l + 1);
     setCooldownMs(c => Math.max(200, c - 200));
   }
@@ -198,9 +197,18 @@ export default function App() {
         <div className="dt-last-roll-title">Last Roll:</div>
         {lastRoll ? (
           <div className="dt-last-roll-expression">
-            {lastRoll.entries.map((e, idx) => (
-              <span key={e.id} className="dt-last-roll-item">{`[${e.id+1}] ${e.face} × ${formatDecimal(toDecimal(e.multiplier))}`}{idx < lastRoll.entries.length - 1 ? ' + ' : ''}</span>
-            ))}
+            {lastRoll.entries.map((e, idx) => {
+              // Find ascension multiplier for this die
+              const die = dice.find(d => d.id === e.id);
+              const ascBase = (die?.ascensionLevel ?? 0) + 1;
+              const ascMult = Math.pow(ascBase, 10);
+              return (
+                <span key={e.id} className="dt-last-roll-item">
+                  {`[${e.id+1}] ${e.face} × ${formatDecimal(toDecimal(e.multiplier))} × ${ascMult.toLocaleString('en-US')}`}
+                  {idx < lastRoll.entries.length - 1 ? ' + ' : ''}
+                </span>
+              );
+            })}
             <span className="dt-last-roll-total"> = {formatDecimal(toDecimal(lastRoll.total))}</span>
           </div>
         ) : (
