@@ -1,0 +1,30 @@
+{
+  "name": "dicetycoon",
+  "version": "1.0.0",
+  "description": "DiceTycoon Task Manager - A simple static web application for task management",
+  "main": "app.js",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000",
+    "lint": "eslint *.js *.html",
+    "lint:fix": "eslint *.js *.html --fix",
+    "format": "prettier --write *.html *.css *.js",
+    "format:check": "prettier --check *.html *.css *.js",
+    "test": "echo 'No tests specified' && exit 0",
+    "validate": "npm run lint && npm run format:check"
+  },
+  "keywords": ["task-manager", "todo", "static-web-app", "javascript"],
+  "author": "DiceTycoon",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-html": "^8.0.0",
+    "prettier": "^3.2.5"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
