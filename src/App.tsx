@@ -101,9 +101,10 @@ export default function App() {
   function ascendDie(id: number) {
     setDice(prev => {
       const target = prev.find(d => d.id === id)!;
-      const cost = 1000 * Math.pow(4, (target.ascensionLevel || 0)); // exponential ascension cost
-      if (!spendCredits(cost)) return prev;
-      return prev.map(d => d.id === id ? { ...d, ascensionLevel: (d.ascensionLevel || 0) + 1, multiplier: toDecimal(1).toString(), level: 0 } : d);
+  // exponential ascension cost using Decimal: 1000 * 4^(ascensionLevel)
+  const costDec = toDecimal(1000).times(toDecimal(4).pow(toDecimal(target.ascensionLevel || 0)));
+  if (!spendCredits(costDec)) return prev;
+  return prev.map(d => d.id === id ? { ...d, ascensionLevel: (d.ascensionLevel || 0) + 1, multiplier: toDecimal(1).toString(), level: 0 } : d);
     });
   }
 
@@ -129,7 +130,7 @@ export default function App() {
       return { ...d, face };
     });
     setDice(newDice);
-    setCredits(c => c.add(earned));
+    setCredits((c: import('@patashu/break_eternity.js').Decimal) => c.add(earned));
     setLastRoll({ entries, total: earned.toString() });
   }
 
@@ -144,7 +145,8 @@ export default function App() {
   function spendCredits(amount: number | string | any) {
     const cost = toDecimal(amount);
     if (DecimalHelpers.gte(credits, cost)) {
-      setCredits(c => c.sub ? c.sub(cost) : toDecimal(Number(c.toString()) - Number(cost.toString())));
+      // Always use Decimal subtraction (no numeric fallback)
+      setCredits((c: import('@patashu/break_eternity.js').Decimal) => c.sub(cost));
       return true;
     }
     pushNotification('Insufficient credits');
@@ -152,32 +154,33 @@ export default function App() {
   }
 
   function unlockDie(id: number) {
-    const cost = 500 * (id + 1);
-    if (!spendCredits(cost)) return;
+  const costDec = toDecimal(500).times(toDecimal(id + 1));
+  if (!spendCredits(costDec)) return;
     setDice(prev => prev.map(d => d.id === id ? { ...d, locked: false } : d));
   }
 
   function levelUpDie(id: number) {
     setDice(prev => {
       const target = prev.find(d => d.id === id)!;
-      const cost = Math.floor(50 * Math.pow(1.5, target.level));
-      if (!spendCredits(cost)) return prev;
-      return prev.map(d => d.id === id ? { ...d, level: d.level + 1, multiplier: toDecimal(Math.pow(1.15, d.level + 1)).toString() } : d);
+  // cost = 50 * (1.5 ^ level) using Decimal
+  const costDec = toDecimal(50).times(toDecimal(1.5).pow(toDecimal(target.level)));
+  if (!spendCredits(costDec)) return prev;
+  return prev.map(d => d.id === id ? { ...d, level: d.level + 1, multiplier: toDecimal(1.15).pow(toDecimal(d.level + 1)).toString() } : d);
     });
   }
 
   function unlockAnim(id: number) {
     setDice(prev => {
       const target = prev.find(d => d.id === id)!;
-      const cost = 200 * ((target.animationLevel ?? 0) + 1);
-      if (!spendCredits(cost)) return prev;
-      return prev.map(d => d.id === id ? { ...d, animationLevel: (d.animationLevel || 0) + 1 } : d);
+  const costDec = toDecimal(200).times(toDecimal((target.animationLevel ?? 0) + 1));
+  if (!spendCredits(costDec)) return prev;
+  return prev.map(d => d.id === id ? { ...d, animationLevel: (d.animationLevel || 0) + 1 } : d);
     });
   }
 
   function purchaseAutorollUpgrade() {
-    const costDec = toDecimal(1000).times(toDecimal(2).pow(autorollLevel));
-    if (!spendCredits(costDec)) return;
+  const costDec = toDecimal(1000).times(toDecimal(2).pow(toDecimal(autorollLevel)));
+  if (!spendCredits(costDec)) return;
     setAutorollLevel(l => l + 1);
     setCooldownMs(c => Math.max(200, c - 200));
   }
@@ -199,15 +202,15 @@ export default function App() {
           <div className="dt-last-roll-expression">
             {lastRoll.entries.map((e, idx) => {
               // Find ascension multiplier for this die
-              const die = dice.find(d => d.id === e.id);
-              const ascBase = (die?.ascensionLevel ?? 0) + 1;
-              const ascMult = Math.pow(ascBase, 10);
-              return (
-                <span key={e.id} className="dt-last-roll-item">
-                  {`[${e.id+1}] ${e.face} × ${formatDecimal(toDecimal(e.multiplier))} × ${ascMult.toLocaleString('en-US')}`}
-                  {idx < lastRoll.entries.length - 1 ? ' + ' : ''}
-                </span>
-              );
+                const die = dice.find(d => d.id === e.id);
+                const ascBase = (die?.ascensionLevel ?? 0) + 1;
+                const ascFactor = toDecimal(ascBase).pow(toDecimal(10));
+                return (
+                  <span key={e.id} className="dt-last-roll-item">
+                    {`[${e.id+1}] ${e.face} × ${formatDecimal(toDecimal(e.multiplier))} × ${formatDecimal(ascFactor)}`}
+                    {idx < lastRoll.entries.length - 1 ? ' + ' : ''}
+                  </span>
+                );
             })}
             <span className="dt-last-roll-total"> = {formatDecimal(toDecimal(lastRoll.total))}</span>
           </div>
