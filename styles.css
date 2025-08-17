@@ -1,0 +1,44 @@
+:root{
+  --bg:#0f1724;--card:#0b1220;--accent:#ffd166;--muted:#9aa4b2;--glass: rgba(255,255,255,0.04);
+}
+*{box-sizing:border-box}
+html,body,#game{height:100%;}
+body{margin:0;font-family:Inter,Segoe UI,system-ui,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#071021 0%, #0f1724 100%);color:#e6eef6}
+#game{max-width:980px;margin:24px auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center}
+#coin-counter{background:var(--glass);padding:8px 12px;border-radius:10px}
+main{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:18px}
+#dice-panel{background:var(--card);padding:16px;border-radius:12px}
+#dice-display{display:flex;flex-direction:column;align-items:center;gap:12px}
+.die{width:160px;height:160px;border-radius:20px;background:linear-gradient(180deg,#142536,#0d2636);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:var(--accent);box-shadow:0 8px 24px rgba(0,0,0,0.6);}
+#roll-btn{padding:10px 18px;border-radius:10px;border:0;background:var(--accent);color:#07202b;font-weight:700;cursor:pointer}
+#roll-btn:active{transform:translateY(1px)}
+#roll-btn:focus{outline:2px solid rgba(255,209,102,0.35)}
+.die.rolling{animation: die-tilt 700ms cubic-bezier(.2,.9,.3,1);}
+.die.rolling{transform-origin:50% 50%;}
+
+@keyframes die-tilt{
+  0% { transform: rotateX(0deg) rotateY(0deg) scale(1); }
+  25% { transform: rotateX(25deg) rotateY(-15deg) scale(1.02); }
+  50% { transform: rotateX(-20deg) rotateY(20deg) scale(1.03); }
+  75% { transform: rotateX(12deg) rotateY(-8deg) scale(1.01); }
+  100% { transform: rotateX(0deg) rotateY(0deg) scale(1); }
+}
+
+/* Particles for critical roll */
+.die{position:relative;overflow:visible}
+.particle{position:absolute;left:50%;top:50%;width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0.95}
+@keyframes particle-fall{
+  0% { transform: translate(-50%,-50%) scale(1); opacity:1 }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4); opacity:0 }
+}
+#dice-list{margin-top:12px}
+.dice-item{display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--glass);border-radius:8px;margin-bottom:8px}
+#shop{background:var(--card);padding:16px;border-radius:12px}
+.upgrade{display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:8px}
+.btn-small{padding:6px 10px;border-radius:8px;border:0;background:#2a9d8f;color:white;cursor:pointer}
+#prestige{background:var(--card);padding:16px;border-radius:12px}
+footer{margin-top:12px;text-align:center;color:var(--muted)}
+.tooltip{font-size:12px;color:var(--muted)}
+.progress{height:8px;background:#0b1220;border-radius:8px;overflow:hidden}
+.progress > i{display:block;height:100%;background:#2a9d8f;width:0%}
