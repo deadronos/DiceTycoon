@@ -1,0 +1,16 @@
+.dt-container { padding: 20px; }
+.dt-header { text-align: center; margin-bottom: 12px; }
+.dt-credits { font-size: 28px; font-weight: 700; color: #6C5CE7; }
+.dt-dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.dt-die-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; min-height: 140px; position: relative; }
+.dt-locked { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.6); border-radius: 10px; }
+.dt-face { font-size: 22px; }
+.dt-small { font-size: 12px; opacity: 0.85; }
+.dt-controls { background: rgba(255,255,255,0.03); padding: 16px; border-radius: 10px; }
+.dt-roll-btn { width: 100%; padding: 16px; background: #6C5CE7; color: white; border: none; border-radius: 8px; font-size: 18px; }
+
+.dt-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+.dt-container { padding: 20px; }
+.dt-gap-8 { height: 8px; }
+.dt-margin-top-8 { margin-top: 8px; }
+.dt-ml-6 { margin-left: 6px; }
