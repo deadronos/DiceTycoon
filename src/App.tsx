@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Decimal from '@patashu/break_eternity.js';
-type DecimalInstance = InstanceType<typeof Decimal>;
-
-// Example: typing state that holds a Decimal instance
-const [credits, setCredits] = useState<DecimalInstance>(() => toDecimal('0'));
-
 import { toDecimal, formatDecimal, fromDecimalString, DecimalHelpers } from './utils/decimal';
+import { safeSave, safeLoad } from './utils/storage';
+type DecimalInstance = InstanceType<typeof Decimal>;
 import Header from './components/Header';
 import DiceGrid from './components/DiceGrid';
 import Controls from './components/Controls';
@@ -20,6 +17,8 @@ type DieState = Die & { face: number };
 const STORAGE_KEY = 'dice-tycoon-save-v1';
 
 export default function App() {
+  // DecimalInstance type inside component
+  type DI = DecimalInstance;
   // Import gamestate from JSON in textbox
   function importGameState() {
     try {
@@ -63,12 +62,9 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY);
     pushNotification('Game reset!');
   }
-  const [credits, setCredits] = useState<DecimalInstance>(() => toDecimal('0'));
-  const [dice, setDice] = useState<DieState[]>(() => {
-    const arr: DieState[] = [];
-    for (let i = 0; i < 6; i++) arr.push({ id: i, locked: i > 0, level: 0, animationLevel: 0, ascensionLevel: 0, multiplier: toDecimal(1).toString(), face: 1 });
-    return arr;
-  });
+  // Start player with 1000 credits by default (matches tests and initial game balance)
+  const [credits, setCredits] = useState<DI>(() => toDecimal('1000') as DI);
+  const [dice, setDice] = useState<DieState[]>(() => getDefaultDice());
   const [autoroll, setAutoroll] = useState(false);
   const [cooldownMs, setCooldownMs] = useState(2000);
   const [autorollLevel, setAutorollLevel] = useState(0);
@@ -86,22 +82,19 @@ export default function App() {
   const [exportImportValue, setExportImportValue] = useState('');
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-          const parsed = JSON.parse(raw);
-          setCredits(fromDecimalString(parsed.credits));
-          setDice(parsed.dice.map((d: any) => ({ ...d })));
-          setAutoroll(Boolean(parsed.autoroll));
-          if (parsed.cooldownMs) setCooldownMs(parsed.cooldownMs);
-          if (parsed.autorollLevel) setAutorollLevel(parsed.autorollLevel || 0);
-        }
-    } catch (e) { }
+    const loaded = safeLoad(STORAGE_KEY, null);
+    if (loaded) {
+      setCredits(fromDecimalString(loaded.credits));
+      setDice(loaded.dice.map((d: any) => ({ ...d })));
+      setAutoroll(Boolean(loaded.autoroll));
+      if (loaded.cooldownMs) setCooldownMs(loaded.cooldownMs);
+      if (loaded.autorollLevel) setAutorollLevel(loaded.autorollLevel || 0);
+    }
   }, []);
 
   useEffect(() => {
     const toSave = { credits: credits.toString(), dice, autoroll, cooldownMs, autorollLevel };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    safeSave(STORAGE_KEY, toSave);
   }, [credits, dice, autoroll, cooldownMs, autorollLevel]);
 
   function ascendDie(id: number) {
@@ -117,17 +110,15 @@ export default function App() {
   function doRoll() {
     // trigger panel rolling animation
     setRolling(true);
-    // stop rolling after animation duration
     window.setTimeout(() => setRolling(false), 800);
 
     // compute new faces immutably and apply per-die multiplier to earned credits
-    let earned = toDecimal(0);
+    let earned = toDecimal(0); // <-- declare earned here
     const entries: { id: number; face: number; multiplier: string; earned: string }[] = [];
     const newDice = dice.map(d => {
       if (d.locked) return d;
       const face = Math.floor(Math.random() * 6) + 1;
       const mult = toDecimal(d.multiplier || '1');
-      // ascension factor defined as (ascensionLevel + 1) ^ 10 so default 0 => 1
       const ascBase = (d.ascensionLevel ?? 0) + 1;
       const ascFactor = toDecimal(ascBase).pow(10);
       const gained = mult.times(face).times(ascFactor);
@@ -136,7 +127,7 @@ export default function App() {
       return { ...d, face };
     });
     setDice(newDice);
-    setCredits((c: DecimalInstance) => c.add(earned));
+  setCredits((c: DI) => c.add(earned) as DI);
     setLastRoll({ entries, total: earned.toString() });
   }
 
@@ -226,33 +217,34 @@ export default function App() {
       </div>
       <div className="dt-layout">
         <div><DiceGrid dice={dice} credits={credits} onLevelUp={levelUpDie} onUnlock={unlockDie} onAnimUnlock={unlockAnim} onAscend={ascendDie} /></div>
-        <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} affordable={{ autorollUpgrade: Number(credits.toString()) >= 1000 * Math.pow(2, autorollLevel) }} /></div>
+  <div><Controls onRoll={doRoll} autoroll={autoroll} setAutoroll={setAutoroll} cooldownMs={cooldownMs} setCooldownMs={setCooldownMs} onAutorollUpgrade={purchaseAutorollUpgrade} autorollUpgradeCost={1000 * Math.pow(2, autorollLevel)} autorollLevel={autorollLevel} affordable={{ autorollUpgrade: DecimalHelpers.gte(credits, toDecimal(1000).times(toDecimal(2).pow(toDecimal(autorollLevel)))) }} /></div>
       </div>
       {/* Bottom controls for reset/export/import */}
-      <div className="dt-bottom-controls" style={{ marginTop: 24, textAlign: 'center' }}>
-        <button onClick={resetGame} style={{ marginRight: 8 }}>Reset</button>
-        <button onClick={exportGameState} style={{ marginRight: 8 }}>Export</button>
-        <button onClick={() => { setShowExportImport('import'); setExportImportValue(''); }} style={{ marginRight: 8 }}>Import</button>
+      <div className="dt-bottom-controls dt-bottom-controls--spaced">
+        <button data-testid="reset-btn-bottom" onClick={resetGame} className="dt-btn--spaced">Reset</button>
+        <button data-testid="export-btn-bottom" onClick={exportGameState} className="dt-btn--spaced">Export</button>
+        <button data-testid="import-btn-bottom" onClick={() => { setShowExportImport('import'); setExportImportValue(''); }} className="dt-btn--spaced">Import</button>
       </div>
       {/* Export/Import textbox */}
-      {showExportImport !== 'none' && (
-        <div className="dt-export-import-area" style={{ margin: '16px auto', maxWidth: 480 }}>
-          <textarea
-            value={exportImportValue}
-            onChange={e => setExportImportValue(e.target.value)}
-            rows={8}
-            style={{ width: '100%', fontFamily: 'monospace', fontSize: 14 }}
-            placeholder={showExportImport === 'import' ? 'Paste gamestate JSON here...' : ''}
-            readOnly={showExportImport === 'export'}
-          />
-          <div style={{ marginTop: 8, textAlign: 'right' }}>
-            {showExportImport === 'import' && (
-              <button onClick={importGameState} style={{ marginRight: 8 }}>Import</button>
-            )}
-            <button onClick={() => { setShowExportImport('none'); setExportImportValue(''); }}>Close</button>
+        {showExportImport !== 'none' && (
+      <div className="dt-export-import-area">
+            <textarea
+              data-testid="export-import-textarea"
+              value={exportImportValue}
+              onChange={e => setExportImportValue(e.target.value)}
+              rows={8}
+        className="dt-export-import-textarea"
+              placeholder={showExportImport === 'import' ? 'Paste gamestate JSON here...' : ''}
+              readOnly={showExportImport === 'export'}
+            />
+            <div className="dt-export-import-actions" data-testid="export-import-actions">
+              {showExportImport === 'import' && (
+                <button data-testid="export-import-action-import" onClick={importGameState} className="dt-btn--spaced">Import</button>
+              )}
+              <button data-testid="export-import-action-close" onClick={() => { setShowExportImport('none'); setExportImportValue(''); }}>Close</button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
     </div>
   );

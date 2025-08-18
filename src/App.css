@@ -51,3 +51,10 @@ button[disabled] { opacity: 0.45; cursor: not-allowed; }
 .dt-last-roll-expression { background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; min-width: 480px; text-align: center; color: #ddd; }
 .dt-last-roll-item { margin: 0 4px; }
 .dt-last-roll-total { margin-left: 8px; font-weight: 700; color: #fff; }
+
+/* Export/Import and bottom controls */
+.dt-bottom-controls--spaced { margin-top: 24px; text-align: center; }
+.dt-btn--spaced { margin-right: 8px; }
+.dt-export-import-area { margin: 16px auto; max-width: 480px; }
+.dt-export-import-textarea { width: 100%; font-family: monospace; font-size: 14px; }
+.dt-export-import-actions { margin-top: 8px; text-align: right; }
