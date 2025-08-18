@@ -1,6 +1,18 @@
 import React from 'react';
 
-export default function Controls({ onRoll, autoroll, setAutoroll, cooldownMs, setCooldownMs, onAutorollUpgrade, autorollUpgradeCost, autorollLevel }: any) {
+type ControlsProps = {
+  onRoll: () => void;
+  autoroll: boolean;
+  setAutoroll: (v: boolean) => void;
+  cooldownMs: number;
+  setCooldownMs: (n: number) => void;
+  onAutorollUpgrade: () => void;
+  autorollUpgradeCost: number;
+  autorollLevel: number;
+  affordable?: { autorollUpgrade?: boolean };
+}
+
+export default function Controls({ onRoll, autoroll, setAutoroll, cooldownMs, setCooldownMs, onAutorollUpgrade, autorollUpgradeCost, autorollLevel }: ControlsProps) {
   return (
     <div className="dt-controls">
       <button data-testid="roll-btn" className="dt-roll-btn" onClick={onRoll}>Roll</button>
