@@ -62,7 +62,8 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEY);
     pushNotification('Game reset!');
   }
-  const [credits, setCredits] = useState<DI>(() => toDecimal('0') as DI);
+  // Start player with 1000 credits by default (matches tests and initial game balance)
+  const [credits, setCredits] = useState<DI>(() => toDecimal('1000') as DI);
   const [dice, setDice] = useState<DieState[]>(() => getDefaultDice());
   const [autoroll, setAutoroll] = useState(false);
   const [cooldownMs, setCooldownMs] = useState(2000);
@@ -220,29 +221,30 @@ export default function App() {
       </div>
       {/* Bottom controls for reset/export/import */}
       <div className="dt-bottom-controls dt-bottom-controls--spaced">
-        <button onClick={resetGame} className="dt-btn--spaced">Reset</button>
-        <button onClick={exportGameState} className="dt-btn--spaced">Export</button>
-        <button onClick={() => { setShowExportImport('import'); setExportImportValue(''); }} className="dt-btn--spaced">Import</button>
+        <button data-testid="reset-btn-bottom" onClick={resetGame} className="dt-btn--spaced">Reset</button>
+        <button data-testid="export-btn-bottom" onClick={exportGameState} className="dt-btn--spaced">Export</button>
+        <button data-testid="import-btn-bottom" onClick={() => { setShowExportImport('import'); setExportImportValue(''); }} className="dt-btn--spaced">Import</button>
       </div>
       {/* Export/Import textbox */}
-      {showExportImport !== 'none' && (
-    <div className="dt-export-import-area">
-          <textarea
-            value={exportImportValue}
-            onChange={e => setExportImportValue(e.target.value)}
-            rows={8}
-      className="dt-export-import-textarea"
-            placeholder={showExportImport === 'import' ? 'Paste gamestate JSON here...' : ''}
-            readOnly={showExportImport === 'export'}
-          />
-          <div className="dt-export-import-actions">
-            {showExportImport === 'import' && (
-              <button onClick={importGameState} className="dt-btn--spaced">Import</button>
-            )}
-            <button onClick={() => { setShowExportImport('none'); setExportImportValue(''); }}>Close</button>
+        {showExportImport !== 'none' && (
+      <div className="dt-export-import-area">
+            <textarea
+              data-testid="export-import-textarea"
+              value={exportImportValue}
+              onChange={e => setExportImportValue(e.target.value)}
+              rows={8}
+        className="dt-export-import-textarea"
+              placeholder={showExportImport === 'import' ? 'Paste gamestate JSON here...' : ''}
+              readOnly={showExportImport === 'export'}
+            />
+            <div className="dt-export-import-actions" data-testid="export-import-actions">
+              {showExportImport === 'import' && (
+                <button data-testid="export-import-action-import" onClick={importGameState} className="dt-btn--spaced">Import</button>
+              )}
+              <button data-testid="export-import-action-close" onClick={() => { setShowExportImport('none'); setExportImportValue(''); }}>Close</button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <Notifications notifications={notifications} onDismiss={(id) => setNotifications(n => n.filter(x => x.id !== id))} />
     </div>
   );
