@@ -1,152 +1,131 @@
-// Decimal helpers: this file provides a small wrapper API used by the app.
-// It prefers a high-precision Decimal (break_eternity.js) if available, but
-// falls back to a safe JS-number based implementation for prototyping and tests.
+import Decimal from '@patashu/break_eternity.js';
 
-// Robust import/detection of Decimal implementation.
-// Some environments (tests, different package builds) expose the library in different shapes
-// so we detect a constructor function in multiple possible locations and fall back to a
-// lightweight Number-backed implementation when necessary.
-// Use the vendored break_eternity build that lives under libs/
-// This ensures a deterministic, committed runtime for Decimal operations.
-import * as DecimalModule from '@patashu/break_eternity.js';
-
-// Detect the runtime export shape from the vendored module. Different bundlers
-// and environments may expose the constructor as the default export, as a
-// named `Decimal` export, or wrapped under a `.default` property. Handle the
-// common possibilities and fall back to a lightweight Number-backed Decimal
-// when none are found.
-let DecimalCtor: any = undefined;
-const _mod: any = DecimalModule as any;
-if (typeof _mod === 'function') {
-  DecimalCtor = _mod;
-} else if (_mod && typeof _mod.default === 'function') {
-  DecimalCtor = _mod.default;
-} else if (_mod && typeof _mod.Decimal === 'function') {
-  DecimalCtor = _mod.Decimal;
-} else if (_mod && typeof _mod.decimal === 'function') {
-  DecimalCtor = _mod.decimal;
+/**
+ * Convert a number, string, or Decimal to a Decimal instance
+ */
+export function toDecimal(value: number | string | Decimal): Decimal {
+  if (value instanceof Decimal) {
+    return value;
+  }
+  return new Decimal(value);
 }
 
-// Lightweight fallback Decimal implemented on top of Number. This provides a
-// minimal compatible surface for tests and avoids hard failures if the vendor
-// file couldn't be loaded for some reason. It intentionally implements only
-// the methods the app uses (add/plus, sub, times, toString, toNumber, gte, lt, pow).
-class NumberDecimal {
-  n: number;
-  constructor(s: string) {
-    this.n = Number(s);
-    if (!Number.isFinite(this.n)) this.n = 0;
-  }
-  toString() {
-    return String(this.n);
-  }
-  toNumber() {
-    return this.n;
-  }
-  plus(x: any) {
-    return new NumberDecimal(String(this.n + Number(x)));
-  }
-  add(x: any) {
-    return this.plus(x);
-  }
-  sub(x: any) {
-    return new NumberDecimal(String(this.n - Number(x)));
-  }
-  times(x: any) {
-    return new NumberDecimal(String(this.n * Number(x)));
-  }
-  gte(x: any) {
-    return this.n >= Number(x);
-  }
-  lt(x: any) {
-    return this.n < Number(x);
-  }
-  pow(x: any) {
-    return new NumberDecimal(String(Math.pow(this.n, Number(x))));
-  }
-}
-
-if (!DecimalCtor) {
-  // Use fallback if detection failed
-  DecimalCtor = NumberDecimal;
-}
-
-export function toDecimal(x: number | string | any) {
-  if (x && typeof x === 'object' && typeof x.toString === 'function' && (x.add || x.plus || x.times || x.sub)) return x;
-  return new DecimalCtor(typeof x === 'string' ? x : String(x));
-}
-
-export function fromDecimalString(s: string) {
-  return new DecimalCtor(s);
-}
-
-// Robust formatter that avoids converting huge Decimals to native Number when possible.
-export function formatDecimal(d: any) {
+/**
+ * Safely parse a string to Decimal, returning fallback on error
+ */
+export function fromDecimalString(str: string | undefined, fallback: Decimal = new Decimal(0)): Decimal {
+  if (!str) return fallback;
   try {
-    // If it's a small number or Decimal convertible to Number safely, use numeric formatting
-    if (typeof d === 'number') {
-      const n = d;
-      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-      if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
-      return String(n);
-    }
-
-    const dec = toDecimal(d);
-    // try toNumber if safe range
-    if (typeof dec.toNumber === 'function') {
-      const approx = dec.toNumber();
-      if (Number.isFinite(approx) && Math.abs(approx) < 1e21) {
-        if (approx >= 1e9) return (approx / 1e9).toFixed(2) + 'B';
-        if (approx >= 1e6) return (approx / 1e6).toFixed(2) + 'M';
-        if (approx >= 1e3) return (approx / 1e3).toFixed(2) + 'K';
-        return String(approx);
-      }
-    }
-
-    // Fallback to string-based formatting for very large numbers
-    const s = dec.toString();
-    if (s.includes('e') || s.includes('E')) return s; // already scientific
-    const [intPart] = s.split('.');
-    const intLen = intPart.replace('-', '').length;
-    if (intLen <= 3) return s;
-    // For moderate sizes, still use K/M/B where it makes sense
-    if (intLen <= 6) {
-      // thousands
-      const value = intPart;
-      const truncated = value.slice(0, value.length - 3);
-      const frac = value.slice(truncated.length, truncated.length + 2) || '0';
-      return `${truncated}.${frac}K`;
-    }
-    if (intLen <= 9) {
-      const value = intPart;
-      const truncated = value.slice(0, value.length - 6);
-      const frac = value.slice(truncated.length, truncated.length + 2) || '0';
-      return `${truncated}.${frac}M`;
-    }
-    if (intLen <= 12) {
-      const value = intPart;
-      const truncated = value.slice(0, value.length - 9);
-      const frac = value.slice(truncated.length, truncated.length + 2) || '0';
-      return `${truncated}.${frac}B`;
-    }
-    // Very large: use compact scientific-like representation: first 3 digits + e+exp
-    const exp = intLen - 1;
-    const first3 = intPart.slice(0, 3);
-    const next = intPart[3] || '0';
-    return `${first3}.${next}e+${exp}`;
+    return new Decimal(str);
   } catch (err) {
-    return String(d);
+    console.error('Failed to parse Decimal:', str, err);
+    return fallback;
   }
 }
 
-export function gte(a: any, b: any) {
-  const A = toDecimal(a);
-  const B = toDecimal(b);
-  // use Decimal's comparison if available
-  if (typeof A.gte === 'function') return A.gte(B);
-  // fallback to string compare (not ideal)
-  return A.toString() >= B.toString();
+/**
+ * Format a Decimal for display with suffixes (K, M, B, T, etc.)
+ */
+export function formatDecimal(
+  value: Decimal | number | string,
+  options: { decimals?: number; style?: 'suffixed' | 'scientific' | 'engineering' } = {}
+): string {
+  const decimal = toDecimal(value);
+  const { decimals = 2, style = 'suffixed' } = options;
+
+  if (style === 'scientific') {
+    return decimal.toExponential(decimals);
+  }
+
+  if (style === 'engineering') {
+    const exp = decimal.e;
+    const engExp = Math.floor(exp / 3) * 3;
+    const mantissa = decimal.div(Decimal.pow(10, engExp));
+    return `${mantissa.toFixed(decimals)}e${engExp}`;
+  }
+
+  // Suffixed format
+  const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+  const tier = Math.floor(decimal.e / 3);
+
+  if (tier <= 0) {
+    return decimal.toFixed(decimals);
+  }
+
+  if (tier >= suffixes.length) {
+    return decimal.toExponential(decimals);
+  }
+
+  const suffix = suffixes[tier];
+  const scaled = decimal.div(Decimal.pow(10, tier * 3));
+  return `${scaled.toFixed(decimals)}${suffix}`;
 }
 
-export const DecimalHelpers = { toDecimal, fromDecimalString, formatDecimal, gte };
+/**
+ * Format a Decimal as a short display string with adaptive precision
+ */
+export function formatShort(value: Decimal | number | string): string {
+  const decimal = toDecimal(value);
+  
+  if (decimal.lt(1000)) {
+    return decimal.toFixed(0);
+  }
+  
+  if (decimal.lt(1000000)) {
+    return formatDecimal(decimal, { decimals: 1, style: 'suffixed' });
+  }
+  
+  return formatDecimal(decimal, { decimals: 2, style: 'suffixed' });
+}
+
+/**
+ * Format a Decimal with full precision for tooltips
+ */
+export function formatFull(value: Decimal | number | string): string {
+  const decimal = toDecimal(value);
+  return decimal.toString();
+}
+
+/**
+ * Compare two Decimal values for sorting
+ */
+export function compareDecimals(a: Decimal, b: Decimal): number {
+  if (a.lt(b)) return -1;
+  if (a.gt(b)) return 1;
+  return 0;
+}
+
+/**
+ * Check if player can afford a cost
+ */
+export function canAfford(credits: Decimal, cost: Decimal): boolean {
+  return credits.gte(cost);
+}
+
+/**
+ * Calculate exponential cost scaling
+ */
+export function calculateCost(baseCost: Decimal, growthRate: Decimal, level: number): Decimal {
+  return baseCost.times(growthRate.pow(level));
+}
+
+/**
+ * Generate a random die face (1-6)
+ */
+export function rollDie(): number {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return (array[0] % 6) + 1;
+  }
+  // Fallback to Math.random
+  return Math.floor(Math.random() * 6) + 1;
+}
+
+/**
+ * Calculate multiplier based on level
+ */
+export function calculateMultiplier(baseMultiplier: Decimal, level: number, multiplierPerLevel: Decimal): Decimal {
+  if (level <= 1) return baseMultiplier;
+  return baseMultiplier.times(Decimal.pow(multiplierPerLevel, level - 1));
+}

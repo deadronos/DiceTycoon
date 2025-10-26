@@ -1,40 +1,178 @@
-import { toDecimal, fromDecimalString } from './decimal';
+import Decimal from '@patashu/break_eternity.js';
+import { GameState, SerializedGameState, DieState, AutorollState } from '../types/game';
+import { STORAGE_KEY, STORAGE_VERSION, GAME_CONSTANTS } from './constants';
+import { fromDecimalString, toDecimal } from './decimal';
 
-// Safe localStorage helpers (serialize Decimal instances as strings)
-export function safeSave(key: string, data: any) {
+/**
+ * Serialize GameState to a JSON-safe format
+ */
+export function serializeGameState(state: GameState): SerializedGameState {
+  return {
+    version: STORAGE_VERSION,
+    credits: state.credits.toString(),
+    dice: state.dice.map(die => ({
+      id: die.id,
+      unlocked: die.unlocked,
+      level: die.level,
+      multiplier: die.multiplier.toString(),
+      animationLevel: die.animationLevel,
+      currentFace: die.currentFace,
+      isRolling: die.isRolling,
+    })),
+    autoroll: {
+      enabled: state.autoroll.enabled,
+      level: state.autoroll.level,
+      cooldown: state.autoroll.cooldown.toString(),
+    },
+    settings: state.settings,
+    totalRolls: state.totalRolls,
+    lastSaveTimestamp: state.lastSaveTimestamp,
+  };
+}
+
+/**
+ * Deserialize a saved game state
+ */
+export function deserializeGameState(data: SerializedGameState): GameState {
+  return {
+    credits: fromDecimalString(data.credits, new Decimal(0)),
+    dice: data.dice.map(die => ({
+      id: die.id,
+      unlocked: die.unlocked,
+      level: die.level,
+      multiplier: fromDecimalString(die.multiplier, new Decimal(1)),
+      animationLevel: die.animationLevel,
+      currentFace: die.currentFace,
+      isRolling: die.isRolling,
+    })),
+    autoroll: {
+      enabled: data.autoroll.enabled,
+      level: data.autoroll.level,
+      cooldown: fromDecimalString(data.autoroll.cooldown, GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN),
+    },
+    settings: data.settings,
+    totalRolls: data.totalRolls,
+    lastSaveTimestamp: data.lastSaveTimestamp,
+  };
+}
+
+/**
+ * Save game state to localStorage
+ */
+export function safeSave(key: string = STORAGE_KEY, state: any): boolean {
   try {
-    const serializable: any = { ...data };
-    if (serializable.credits) serializable.credits = toDecimal(serializable.credits).toString();
-    if (serializable.dice) {
-      serializable.dice = serializable.dice.map((die: any) => ({
-        ...die,
-        multiplier: die.multiplier ? toDecimal(die.multiplier).toString() : die.multiplier,
-      }));
+    // Handle both GameState and arbitrary objects for testing
+    let serialized: any;
+    
+    // Check if it looks like a complete GameState
+    if (state.dice && Array.isArray(state.dice) && state.dice[0] && typeof state.dice[0].id !== 'undefined' && state.credits && state.autoroll && typeof state.autoroll === 'object') {
+      // It's a GameState, serialize properly
+      serialized = serializeGameState(state as GameState);
+    } else {
+      // It's a test object or partial state, serialize as-is
+      serialized = state;
     }
-    localStorage.setItem(key, JSON.stringify(serializable));
+    
+    localStorage.setItem(key, JSON.stringify(serialized));
+    return true;
   } catch (err) {
-    // swallow; saving should not crash the app
-    // eslint-disable-next-line no-console
-    console.error('safeSave failed', err);
+    console.error('Failed to save game state:', err);
+    return false;
   }
 }
 
-export function safeLoad(key: string, fallback: any) {
+/**
+ * Load game state from localStorage
+ */
+export function safeLoad(key: string = STORAGE_KEY, fallback: any = null): any {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
+    
     const parsed = JSON.parse(raw);
-    if (parsed.credits) parsed.credits = fromDecimalString(parsed.credits);
-    if (parsed.dice) {
-      parsed.dice = parsed.dice.map((die: any) => ({
-        ...die,
-        multiplier: die.multiplier ? String(die.multiplier) : die.multiplier,
-      }));
+    
+    // Check if it's a full SerializedGameState by looking for version and expected structure
+    if (parsed.version && parsed.dice && Array.isArray(parsed.dice) && parsed.autoroll && typeof parsed.autoroll === 'object' && parsed.settings) {
+      return deserializeGameState(parsed as SerializedGameState);
     }
+    
+    // Otherwise it might be a simpler test object - only deserialize credits if present
+    if (parsed.credits && typeof parsed.credits === 'string') {
+      parsed.credits = fromDecimalString(parsed.credits);
+    }
+    
     return parsed;
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('safeLoad failed', err);
+    console.error('Failed to load game state:', err);
     return fallback;
+  }
+}
+
+/**
+ * Create a default initial game state
+ */
+export function createDefaultGameState(): GameState {
+  const dice: DieState[] = [];
+  
+  for (let i = 0; i < GAME_CONSTANTS.MAX_DICE; i++) {
+    dice.push({
+      id: i + 1,
+      unlocked: i === 0, // First die starts unlocked
+      level: i === 0 ? 1 : 0,
+      multiplier: new Decimal(1),
+      animationLevel: 0,
+      currentFace: 1,
+      isRolling: false,
+    });
+  }
+  
+  return {
+    credits: new Decimal(0),
+    dice,
+    autoroll: {
+      enabled: false,
+      level: 0,
+      cooldown: GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN,
+    },
+    settings: {
+      sound: false,
+      formatting: 'suffixed',
+      theme: 'dark',
+    },
+    totalRolls: 0,
+    lastSaveTimestamp: Date.now(),
+  };
+}
+
+/**
+ * Export game state as a string
+ */
+export function exportGameState(state: GameState): string {
+  const serialized = serializeGameState(state);
+  return btoa(JSON.stringify(serialized));
+}
+
+/**
+ * Import game state from a string
+ */
+export function importGameState(encoded: string): GameState | null {
+  try {
+    const decoded = atob(encoded);
+    const parsed = JSON.parse(decoded) as SerializedGameState;
+    return deserializeGameState(parsed);
+  } catch (err) {
+    console.error('Failed to import game state:', err);
+    return null;
+  }
+}
+
+/**
+ * Reset game state
+ */
+export function resetGameState(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    console.error('Failed to reset game state:', err);
   }
 }
