@@ -1,43 +1,110 @@
 import React from 'react';
-import { toDecimal, formatDecimal } from '../utils/decimal';
+import { DieState } from '../types/game';
+import { formatShort, formatFull } from '../utils/decimal';
+import Decimal from '@patashu/break_eternity.js';
 
-type Die = {
-  id: number;
-  locked: boolean;
-  level: number;
-  animationLevel?: number;
-  ascensionLevel?: number;
-};
+interface DieCardProps {
+  die: DieState;
+  unlockCost?: Decimal;
+  levelUpCost?: Decimal;
+  animationUnlockCost?: Decimal;
+  onUnlock: () => void;
+  onLevelUp: () => void;
+  onUnlockAnimation: () => void;
+  canUnlock: boolean;
+  canLevelUp: boolean;
+  canUnlockAnimation: boolean;
+}
 
-export default function DieCard({ die, onLevelUp, onUnlock, onAnimUnlock, onAscend, affordable = {} }: { die: Die, onLevelUp?: any, onUnlock?: any, onAnimUnlock?: any, onAscend?: any, affordable?: Record<string, boolean> }) {
-  const unlockCost = formatDecimal(toDecimal(500).times(die.id + 1));
-  const levelUpCost = formatDecimal(toDecimal(50).times(toDecimal(1.5).pow(die.level)).floor());
-  const animCost = formatDecimal(toDecimal(200).times((die.animationLevel ?? 0) + 1));
-  const ascCost = formatDecimal(toDecimal(1000).times(toDecimal(4).pow(die.ascensionLevel || 0)));
+export const DieCard: React.FC<DieCardProps> = ({
+  die,
+  unlockCost,
+  levelUpCost,
+  animationUnlockCost,
+  onUnlock,
+  onLevelUp,
+  onUnlockAnimation,
+  canUnlock,
+  canLevelUp,
+  canUnlockAnimation,
+}) => {
+  const getDieFace = (face: number): string => {
+    const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+    return faces[face - 1] || '⚀';
+  };
 
-  const canUnlock = affordable.unlock ?? true;
-  const canLevel = affordable.levelUp ?? true;
-  const canAnim = affordable.anim ?? true;
-  const canAscend = affordable.ascend ?? true;
+  const getAnimationClass = (): string => {
+    if (!die.isRolling) return '';
+    if (die.animationLevel === 0) return 'rolling';
+    return `animation-level-${die.animationLevel} rolling`;
+  };
 
-  return (
-    <div className="dt-die-card">
-      {die.locked ? (
-        <div className="dt-locked">
-          <div>Locked — unlock for {unlockCost}</div>
-          <button data-testid={`unlock-${die.id}`} onClick={() => onUnlock && onUnlock(die.id)}>Unlock</button>
-        </div>
-      ) : (
-        <div>
-          <div className="dt-face">[{die.id + 1}]</div>
-          <div className="dt-small">Level: {die.level}</div>
-          <div className="dt-margin-top-8">
-            <button disabled={!canLevel} data-testid={`levelup-${die.id}`} onClick={() => onLevelUp && onLevelUp(die.id)}>Level Up ({levelUpCost})</button>
-            <button disabled={!canAnim} data-testid={`animup-${die.id}`} onClick={() => onAnimUnlock && onAnimUnlock(die.id)} className="dt-ml-6">Unlock Anim ({animCost})</button>
-            <button disabled={!canAscend} data-testid={`ascend-${die.id}`} onClick={() => onAscend && onAscend(die.id)} className="dt-ml-6">Ascend (Lv {die.ascensionLevel || 0}) ({ascCost})</button>
+  if (!die.unlocked) {
+    return (
+      <div className="die-card glass-card locked">
+        <div className="lock-overlay">
+          <div className="lock-icon">🔒</div>
+          <div className="die-info">
+            <div className="die-level">Die #{die.id}</div>
+            <button
+              className="btn btn-primary btn-small"
+              onClick={onUnlock}
+              disabled={!canUnlock}
+              title={unlockCost ? formatFull(unlockCost) : ''}
+            >
+              Unlock ({unlockCost ? formatShort(unlockCost) : '?'})
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="die-card glass-card unlocked">
+      <div className="die-info">
+        <div className="die-level">Die #{die.id} • Level {die.level}</div>
+      </div>
+
+      <div className={`die-face ${getAnimationClass()}`}>
+        {getDieFace(die.currentFace)}
+      </div>
+
+      <div className="die-info">
+        <div className="die-multiplier tooltip">
+          ×{formatShort(die.multiplier)}
+          <span className="tooltiptext">Multiplier: {formatFull(die.multiplier)}</span>
+        </div>
+      </div>
+
+      <div className="die-actions" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <button
+          className="btn btn-secondary btn-small"
+          onClick={onLevelUp}
+          disabled={!canLevelUp}
+          title={levelUpCost ? formatFull(levelUpCost) : ''}
+        >
+          Level Up ({levelUpCost ? formatShort(levelUpCost) : '?'})
+        </button>
+
+        {die.animationLevel < 3 && (
+          <button
+            className="btn btn-primary btn-small"
+            onClick={onUnlockAnimation}
+            disabled={!canUnlockAnimation}
+            title={animationUnlockCost ? formatFull(animationUnlockCost) : ''}
+          >
+            {die.animationLevel === 0 ? '✨ Unlock Animation' : `✨ Upgrade Animation (${die.animationLevel}/3)`}
+            {animationUnlockCost && ` - ${formatShort(animationUnlockCost)}`}
+          </button>
+        )}
+
+        {die.animationLevel === 3 && (
+          <div style={{ fontSize: '0.85rem', color: 'var(--color-secondary)', textAlign: 'center' }}>
+            ⭐ Max Animation
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
