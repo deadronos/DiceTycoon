@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { formatShort } from '../utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { CREDIT_POPUP_DURATION } from '../utils/constants';
 
 interface CreditPopupProps {
-  credits: Decimal;
+  credits: DecimalType;
   onComplete: () => void;
 }
 

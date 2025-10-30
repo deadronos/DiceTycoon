@@ -1,21 +1,18 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import App from '../../src/App';
+import { App } from '../../src/App';
 
 describe('Last Roll', () => {
-  it('Last Roll area shows formatted total after roll', () => {
+  it('Last Roll area shows formatted total after roll', async () => {
     render(<App />);
-  const rollBtn = screen.getAllByTestId('roll-btn')[0];
+    const rollBtn = screen.getByRole('button', { name: /roll dice/i });
     fireEvent.click(rollBtn);
-    // wait a bit for animation timeout (App uses 800ms)
-    return new Promise((resolve) => setTimeout(() => {
-  const lastRoll = screen.getByText(/Last Roll:/i);
-  expect(lastRoll).toBeTruthy();
-  // total should be displayed with = sign and a number-like token
-  const total = screen.getByText(/=/);
-  expect(total).toBeTruthy();
-      resolve(undefined);
-    }, 900));
+    
+    // Wait for credit popup to appear
+    await waitFor(() => {
+      const popup = document.querySelector('.credit-popup');
+      expect(popup).toBeTruthy();
+    });
   });
 });

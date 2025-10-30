@@ -1,9 +1,9 @@
-import Decimal from '@patashu/break_eternity.js';
+import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 /**
  * Convert a number, string, or Decimal to a Decimal instance
  */
-export function toDecimal(value: number | string | Decimal): Decimal {
+export function toDecimal(value: number | string | DecimalType): DecimalType {
   if (value instanceof Decimal) {
     return value;
   }
@@ -13,7 +13,7 @@ export function toDecimal(value: number | string | Decimal): Decimal {
 /**
  * Safely parse a string to Decimal, returning fallback on error
  */
-export function fromDecimalString(str: string | undefined, fallback: Decimal = new Decimal(0)): Decimal {
+export function fromDecimalString(str: string | undefined, fallback: DecimalType = new Decimal(0)): DecimalType {
   if (!str) return fallback;
   try {
     return new Decimal(str);
@@ -27,7 +27,7 @@ export function fromDecimalString(str: string | undefined, fallback: Decimal = n
  * Format a Decimal for display with suffixes (K, M, B, T, etc.)
  */
 export function formatDecimal(
-  value: Decimal | number | string,
+  value: DecimalType | number | string,
   options: { decimals?: number; style?: 'suffixed' | 'scientific' | 'engineering' } = {}
 ): string {
   const decimal = toDecimal(value);
@@ -64,7 +64,7 @@ export function formatDecimal(
 /**
  * Format a Decimal as a short display string with adaptive precision
  */
-export function formatShort(value: Decimal | number | string): string {
+export function formatShort(value: DecimalType | number | string): string {
   const decimal = toDecimal(value);
   
   if (decimal.lt(1000)) {
@@ -81,7 +81,7 @@ export function formatShort(value: Decimal | number | string): string {
 /**
  * Format a Decimal with full precision for tooltips
  */
-export function formatFull(value: Decimal | number | string): string {
+export function formatFull(value: DecimalType | number | string): string {
   const decimal = toDecimal(value);
   return decimal.toString();
 }
@@ -89,7 +89,7 @@ export function formatFull(value: Decimal | number | string): string {
 /**
  * Compare two Decimal values for sorting
  */
-export function compareDecimals(a: Decimal, b: Decimal): number {
+export function compareDecimals(a: DecimalType, b: DecimalType): number {
   if (a.lt(b)) return -1;
   if (a.gt(b)) return 1;
   return 0;
@@ -98,14 +98,14 @@ export function compareDecimals(a: Decimal, b: Decimal): number {
 /**
  * Check if player can afford a cost
  */
-export function canAfford(credits: Decimal, cost: Decimal): boolean {
+export function canAfford(credits: DecimalType, cost: DecimalType): boolean {
   return credits.gte(cost);
 }
 
 /**
  * Calculate exponential cost scaling
  */
-export function calculateCost(baseCost: Decimal, growthRate: Decimal, level: number): Decimal {
+export function calculateCost(baseCost: DecimalType, growthRate: DecimalType, level: number): DecimalType {
   return baseCost.times(growthRate.pow(level));
 }
 
@@ -125,7 +125,7 @@ export function rollDie(): number {
 /**
  * Calculate multiplier based on level
  */
-export function calculateMultiplier(baseMultiplier: Decimal, level: number, multiplierPerLevel: Decimal): Decimal {
+export function calculateMultiplier(baseMultiplier: DecimalType, level: number, multiplierPerLevel: DecimalType): DecimalType {
   if (level <= 1) return baseMultiplier;
-  return baseMultiplier.times(Decimal.pow(multiplierPerLevel, level - 1));
+  return baseMultiplier.times(toDecimal(multiplierPerLevel).pow(level - 1));
 }

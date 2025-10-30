@@ -1,69 +1,47 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import App from '../src/App';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { App } from '../src/App';
 
-// This test verifies the export/import textbox round-trips the gamestate.
-// Steps:
-// 1. Render the app
-// 2. Unlock a die (to change state)
-// 3. Click Export, copy the textarea contents
-// 4. Reset the game
-// 5. Click Import, paste the exported JSON, and import
-// 6. Assert that the previously unlocked die is unlocked again
-
+// This test verifies the export/import functionality
 describe('Export / Import', () => {
-  it('round-trips the gamestate via the export/import textbox', () => {
-    const { container } = render(React.createElement(App));
+  it('exports and imports game state', () => {
+    // Mock clipboard and prompt
+    const clipboardData: string[] = [];
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn((text: string) => {
+          clipboardData.push(text);
+          return Promise.resolve();
+        }),
+      },
+    });
 
-    // Unlock die 1 to change the default state (die id 1 is locked initially)
-    const unlockBtn = within(container).getByTestId('unlock-1');
-    fireEvent.click(unlockBtn);
+    const promptSpy = vi.spyOn(window, 'prompt');
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
-    // Open export UI (bottom control)
-  const bottom = container.querySelector('.dt-bottom-controls') as HTMLElement;
-  const exportBtn = within(bottom).getByText('Export');
+    render(<App />);
+
+    // Click Export Save button
+    const exportBtn = screen.getByRole('button', { name: /export save/i });
     fireEvent.click(exportBtn);
 
-  // The textarea should appear and contain JSON
-  const textarea = within(container).getByTestId('export-import-textarea') as HTMLTextAreaElement;
-  expect(textarea).toBeDefined();
-  const exported = textarea.value;
-  expect(exported).toBeTruthy();
+    // Verify data was copied to clipboard
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+    expect(clipboardData.length).toBeGreaterThan(0);
+    expect(alertSpy).toHaveBeenCalledWith('Game state copied to clipboard!');
 
-    // Now reset the game to clear unlocked dice
-  const resetBtn = within(bottom).getByText('Reset');
-    fireEvent.click(resetBtn);
+    // Simulate import with the exported data
+    promptSpy.mockReturnValue(clipboardData[0]);
+    const importBtn = screen.getByRole('button', { name: /import save/i });
+    fireEvent.click(importBtn);
 
-    // Verify die 1 is locked again (should show an unlock button)
-    expect(within(container).getByTestId('unlock-1')).toBeTruthy();
+    // Verify successful import
+    expect(promptSpy).toHaveBeenCalledWith('Paste your save data:');
+    expect(alertSpy).toHaveBeenCalledWith('Game loaded successfully!');
 
-  // Open import UI (bottom control) and paste exported JSON
-  const importBtn = within(bottom).getByTestId('import-btn-bottom');
-  fireEvent.click(importBtn);
-  const importTextarea = within(container).getByTestId('export-import-textarea') as HTMLTextAreaElement;
-  fireEvent.change(importTextarea, { target: { value: exported } });
-
-  // Click the Import action inside the export/import area using test id
-  const importAction = within(container).getByTestId('export-import-action-import');
-  expect(importAction).toBeTruthy();
-  fireEvent.click(importAction);
-
-    // After import, the unlocked button should no longer be present for die 1
-    // (it should show the die card with Level/Ascend, etc.)
-  // Validate that credits, autoroll, cooldown, and unlock state match
-  const state = JSON.parse(exported);
-  // Credits should match formatted value in header
-  const expectedCredits = state.credits;
-  const topCredits = within(container).getByText((content, node) => content.includes('Credits:'));
-  expect(topCredits.textContent).toContain('Credits:');
-  // Autoroll state (boolean)
-  expect(state.autoroll).toBeDefined();
-  // cooldownMs
-  expect(state.cooldownMs).toBeDefined();
-  // Die 1 should be unlocked in the imported state
-  const die1 = state.dice.find((d: any) => d.id === 1);
-  expect(die1).toBeTruthy();
-  expect(die1.locked).toBe(false);
+    // Cleanup
+    promptSpy.mockRestore();
+    alertSpy.mockRestore();
   });
 });

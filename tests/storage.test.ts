@@ -5,7 +5,7 @@ import { toDecimal } from '../src/utils/decimal';
 const KEY = 'test-storage-key';
 
 beforeEach(() => {
-  try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(KEY); } catch (_error) { /* ignore */ }
 });
 
 describe('storage.safeSave / safeLoad', () => {

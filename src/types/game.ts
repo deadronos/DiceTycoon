@@ -1,10 +1,10 @@
-import Decimal from '@patashu/break_eternity.js';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 export interface DieState {
   id: number;
   unlocked: boolean;
   level: number;
-  multiplier: Decimal;
+  multiplier: DecimalType;
   animationLevel: number;
   currentFace: number;
   isRolling: boolean;
@@ -13,7 +13,7 @@ export interface DieState {
 export interface AutorollState {
   enabled: boolean;
   level: number;
-  cooldown: Decimal;
+  cooldown: DecimalType;
 }
 
 export interface GameSettings {
@@ -23,7 +23,7 @@ export interface GameSettings {
 }
 
 export interface GameState {
-  credits: Decimal;
+  credits: DecimalType;
   dice: DieState[];
   autoroll: AutorollState;
   settings: GameSettings;
@@ -44,17 +44,17 @@ export interface SerializedGameState {
 export interface GameConstants {
   MAX_DICE: number;
   DIE_FACES: number;
-  BASE_UNLOCK_COST: Decimal;
-  UNLOCK_COST_MULTIPLIER: Decimal;
-  BASE_LEVEL_COST: Decimal;
-  LEVEL_COST_GROWTH: Decimal;
-  BASE_MULTIPLIER: Decimal;
-  MULTIPLIER_PER_LEVEL: Decimal;
-  BASE_AUTOROLL_COOLDOWN: Decimal;
-  AUTOROLL_COOLDOWN_REDUCTION: Decimal;
-  AUTOROLL_UNLOCK_COST: Decimal;
-  AUTOROLL_UPGRADE_COST: Decimal;
-  AUTOROLL_COST_GROWTH: Decimal;
-  ANIMATION_UNLOCK_COST: Decimal;
+  BASE_UNLOCK_COST: DecimalType;
+  UNLOCK_COST_MULTIPLIER: DecimalType;
+  BASE_LEVEL_COST: DecimalType;
+  LEVEL_COST_GROWTH: DecimalType;
+  BASE_MULTIPLIER: DecimalType;
+  MULTIPLIER_PER_LEVEL: DecimalType;
+  BASE_AUTOROLL_COOLDOWN: DecimalType;
+  AUTOROLL_COOLDOWN_REDUCTION: DecimalType;
+  AUTOROLL_UNLOCK_COST: DecimalType;
+  AUTOROLL_UPGRADE_COST: DecimalType;
+  AUTOROLL_COST_GROWTH: DecimalType;
+  ANIMATION_UNLOCK_COST: DecimalType;
   MAX_ANIMATION_LEVEL: number;
 }

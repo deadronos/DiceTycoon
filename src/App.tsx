@@ -29,7 +29,7 @@ import {
 } from './utils/game-logic';
 import { canAfford } from './utils/decimal';
 import Decimal from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, MAX_OFFLINE_TIME } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL } from './utils/constants';
 import './styles.css';
 
 export const App: React.FC = () => {
@@ -54,7 +54,7 @@ export const App: React.FC = () => {
       ...gameState,
       lastSaveTimestamp: Date.now(),
     };
-    safeSave(stateToSave);
+    safeSave(undefined, stateToSave);
   }, [gameState]);
 
   // Auto-save every 30 seconds
@@ -277,3 +277,5 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
+export default App;
