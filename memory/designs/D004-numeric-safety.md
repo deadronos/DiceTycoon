@@ -11,17 +11,19 @@ This design codifies the project's Decimal usage rules, performance consideratio
 
 ## Rules and Patterns
 
-- Always construct Decimal instances from strings when values are not literal integers (e.g., `new Decimal('12345.67')`).
-- Avoid mixing Number and Decimal in expressions; explicitly convert `Number` to `Decimal` via `Decimal.fromNumber(n)` when necessary.
-- Group Decimal math operations to minimize intermediate allocations: compute using chained Decimal methods and avoid creating many ephemeral Decimals inside tight loops.
+- Always construct Decimal instances from strings when values are not literal integers (e.g., `new Decimal('12345.67')`) or use `toDecimal()`/`fromDecimalString()` helpers from `src/utils/decimal.ts`.
+- Avoid mixing Number and Decimal in expressions; explicitly convert `Number` to `Decimal` via `toDecimal(n)` or `Decimal.fromNumber(n)` when necessary.
+- Group Decimal math operations to minimize intermediate allocations: compute using chained Decimal methods and avoid creating many ephemeral Decimals inside tight loops. When possible, aggregate values (sum multipliers then multiply) rather than per-item pow/ops in hot loops.
 
 ## Formatting & Display
 
-- Provide a formatting utility (in `src/utils/decimal.ts`) with functions:
+- The project exposes formatting helpers in `src/utils/decimal.ts`. Use these helpers rather than reimplementing formatting throughout the codebase:
 
-  - `formatShort(decimal, digits)` — returns suffixed notation (K, M, B) for large numbers
-  - `formatScientific(decimal, digits)` — scientific notation for extremely large values
-  - `toFixedString(decimal, places)` — stable fixed decimal representation for UI where needed
+  - `formatShort(value)` — compact suffixed notation for UI elements
+  - `formatDecimal(value, { decimals, style })` — flexible formatting (styles: `'suffixed'`, `'scientific'`, `'engineering'`)
+  - `formatFull(value)` — full-precision string for tooltips and debug
+
+Use `formatShort` for buttons and compact displays and `formatFull` for tooltips or copy-paste fields. Cache formatted strings for frequently updated UI fragments and only recompute on value change.
 
 ## Performance Considerations
 
@@ -31,10 +33,11 @@ This design codifies the project's Decimal usage rules, performance consideratio
 
 ## Tests & Acceptance
 
-- Unit tests for formatting utilities to assert expected strings for representative values.
-- Performance benchmark tests for high-frequency autoroll simulations to ensure smooth UI at target autoroll rates.
+- Unit tests for formatting utilities (`formatDecimal`, `formatShort`, `formatFull`) asserting expected outputs for representative values.
+- Roundtrip serialization tests using `serializeGameState` and `deserializeGameState` from `src/utils/storage.ts` to assert Decimal equality after save/load.
+- Performance benchmark tests for high-frequency autoroll simulations to ensure UI responsiveness and acceptable allocation profiles.
 
 ## Notes
 
-- Document common pitfalls in README or a short `DECIMAL_GUIDE.md` for contributors.
-- Consider helper wrappers that accept Number or Decimal but always return Decimal to simplify API use.
+- Keep `memory/designs/DECIMAL_GUIDE.md` up to date with helper names and usage patterns (this file exists).
+- Prefer thin helper wrappers (e.g., `toDecimal`) that accept Number|string|Decimal and always return Decimal to simplify calling code.

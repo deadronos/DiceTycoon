@@ -1,150 +1,94 @@
 # Decimal Guide — Quick Reference for Contributors
 
-## Overview
-
-This short guide provides practical rules, examples, and common pitfalls for using `@Patashu/break_eternity.js` Decimal in DiceTycoon. Follow these conventions to ensure numeric correctness, safe persistence, and performant game logic.
+This guide aligns the project's Decimal guidance with the current implementation in `src/` (2025-10-30). It highlights the actual helper names and patterns used across the codebase and gives practical examples for contributors.
 
 ## Why Decimal
 
-- Decimal preserves precision for very large and fractional numbers used in incremental games.
-- Native `Number` will lose precision for large values and is unsuitable for game-state arithmetic.
+- Use `@Patashu/break_eternity.js` Decimal for all game numeric state (credits, costs, multipliers, cooldowns). Native `Number` loses precision for large values and should not be used for persisted or game-critical arithmetic.
 
-## Basic Usage
+## Source-of-truth helpers
 
-- Create Decimals from strings when precision matters:
+- Formatting and Decimal utilities live in `src/utils/decimal.ts` and include:
+  - `toDecimal(value)` — canonical converter to Decimal
+  - `fromDecimalString(str, fallback)` — safe parse with fallback
+  - `formatDecimal(value, {decimals, style})` — flexible formatter (style: 'suffixed'|'scientific'|'engineering')
+  - `formatShort(value)` — short adaptive formatting for compact UI
+  - `formatFull(value)` — full-precision string for tooltips/logs
+  - `canAfford(credits, cost)` — boolean affordability check
+  - `calculateCost(baseCost, growthRate, level)` — exponential cost helper
 
-```ts
-import { Decimal } from '@patashu/break_eternity.js';
+## Recommended usage patterns
 
-const credits = new Decimal('0');
-const cost = new Decimal('123.45');
-const multiplier = Decimal.fromNumber(2.5); // use when starting from Number
-```
+- Always convert inputs to Decimal with `toDecimal()` before performing operations.
+- Use the helper functions rather than mixing Decimal methods and native Number operators.
 
-- Preferred patterns:
-  - Use `Decimal` methods (`plus`, `times`, `pow`, `gte`, `lt`) instead of mixing native arithmetic.
-  - Chain operations where possible to minimize temporary allocations.
-
-Example arithmetic:
-
-```ts
-// Bad: mixing Number and Decimal
-// const next = credits + 10 * level;
-
-// Good:
-const levelBonus = Decimal.fromNumber(level).times(10);
-const next = credits.plus(levelBonus);
-```
-
-## Comparisons
-
-Use Decimal comparison methods:
+Example (preferred):
 
 ```ts
-if (credits.gte(cost)) {
-  // can afford
+import { toDecimal, calculateCost } from 'src/utils/decimal';
+
+const cost = calculateCost(GAME_CONSTANTS.BASE_LEVEL_COST, GAME_CONSTANTS.LEVEL_COST_GROWTH, currentLevel);
+if (canAfford(state.credits, cost)) {
+  // proceed
 }
 ```
-
-Avoid `>` and `>=` with Decimal objects — use `.gt()`, `.gte()`, `.lt()`, `.lte()` for clarity.
 
 ## Formatting for UI
 
-Centralize formatting in `src/utils/decimal.ts` with helpers:
+- Use `formatShort()` for compact displays (e.g., in dashboards and buttons).
+- Use `formatDecimal(..., { style: 'scientific' })` or `formatFull()` for tooltips and debug views.
+- Cache formatted strings for high-frequency updates (autoroll) and only recompute when the underlying Decimal changes.
 
-- `formatShort(decimal, digits)` — suffixed format (K, M, B)
-- `formatScientific(decimal, digits)` — scientific notation
-- `toFixedString(decimal, places)` — stable fixed-point string
+## Persistence and storage helpers
 
-Cache formatted strings for frequently updated UI elements and only recompute when the underlying Decimal changes.
+- The storage helpers live in `src/utils/storage.ts` and implement canonical serialization/deserialization:
+  - `serializeGameState(state)` / `deserializeGameState(data)` — game-shaped roundtrip serialization
+  - `safeSave(key?, state)` / `safeLoad(key?, fallback)` — resilient localStorage wrappers
+  - `createDefaultGameState()` — default-initialized state used on first run or after reset
 
-## Persistence (Save/Load)
-
-- Always serialize Decimal instances to strings before saving to `localStorage`.
-- Use a single storage wrapper that centralizes serialization and deserialization.
-
-Example helpers:
+Example save/load pattern (use the helpers, not ad-hoc JSON):
 
 ```ts
-function serializeDecimal(d: Decimal | undefined): string | undefined {
-  return d ? d.toString() : undefined;
-}
+import { safeSave, safeLoad } from 'src/utils/storage';
 
-function deserializeDecimal(s: string | undefined): Decimal | undefined {
-  return s ? new Decimal(s) : undefined;
-}
+safeSave(undefined, gameState);
+const loaded = safeLoad();
 ```
 
-Save/Load pattern (pseudo-code):
+These functions ensure Decimal fields are saved as strings and rehydrated via `fromDecimalString()` during load.
 
-```ts
-const STORAGE_KEY = 'dicetycoon.gamestate.v1';
+## Migrations and versioning
 
-function safeSave(gameState: GameState) {
-  const serializable = {
-    ...gameState,
-    credits: gameState.credits.toString(),
-    dice: gameState.dice.map(d => ({ ...d, multiplier: d.multiplier.toString() })),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
-}
+- `storage.ts` includes a `version` field in the serialized payload. When changing `GameState` shape, bump `STORAGE_VERSION` and implement migration logic in `deserializeGameState` or a dedicated `migrateSave(payload)` helper.
 
-function safeLoad(): GameState | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  const parsed = JSON.parse(raw);
-  // convert known string fields back to Decimal
-  parsed.credits = new Decimal(parsed.credits);
-  parsed.dice = parsed.dice.map((d: any) => ({ ...d, multiplier: new Decimal(d.multiplier) }));
-  return parsed as GameState;
-}
-```
+## Performance tips
 
-- Keep an explicit list of keys that require Decimal rehydration so migrations are straightforward.
+- Avoid creating Decimals inside tight loops; batch computations using chained Decimal methods.
+- Use `formatShort()` for UI and debounce updates during autoroll to reduce re-render work.
+- For offline/autoroll batching (see `src/utils/game-logic.ts`), perform aggregated Decimal math rather than per-roll storage writes.
 
-## Migration and Versioning
+## Tests to include
 
-- Version the saved payload (`dicetycoon.gamestate.v1`); when schema changes, bump version and add a migration.
-- Implement `migrateSave(payload)` to upgrade older saves to the current schema.
+- Serialization roundtrip tests using `serializeGameState`/`deserializeGameState`.
+- Formatting unit tests for `formatDecimal`, `formatShort`, and `formatFull`.
+- Autoroll stress tests to validate performance and allocations.
 
-## Performance Tips
+## Common pitfalls
 
-- Avoid creating Decimals in tight loops — compute aggregated results using chained Decimal operations.
-- Batch autoroll operations into fewer updates and only perform expensive Decimal math on the batched result.
-- Debounce UI updates when autoroll is running fast to avoid reformatting every tick.
+- Mixing Number and Decimal without conversion.
+- Recomputing formatted strings every frame instead of on-change.
+- Not versioning saved payloads when schema changes.
 
-## Testing
+## Quick checklist
 
-- Unit: write roundtrip serialization tests that assert Decimal equality after save/load.
-- Performance: add a test that simulates high-rate autoroll to ensure the UI remains responsive and CPU usage stays reasonable.
-
-Example Vitest unit snippet:
-
-```ts
-import { describe, it, expect } from 'vitest';
-
-it('serializes and deserializes Decimal values', () => {
-  const original = new Decimal('123456789.123');
-  const s = original.toString();
-  const parsed = new Decimal(s);
-  expect(parsed.eq(original)).toBe(true);
-});
-```
-
-## Common Pitfalls
-
-- Mixing Number and Decimal without explicit conversion (leads to surprising results).
-- Storing Decimals directly in `localStorage` without converting to strings.
-- Recomputing formatted strings on every animation frame instead of on value change.
-
-## Quick Checklist for Contributors
-
-- [ ] Use Decimal for all game numbers in state and logic.
-- [ ] Construct from strings where precision matters.
-- [ ] Serialize Decimals to strings for persistence and rehydrate explicitly on load.
-- [ ] Add migration functions when the GameState schema changes.
-- [ ] Cache formatting results and batch autoroll computations.
+- [ ] Use `toDecimal`/`fromDecimalString` for conversions.
+- [ ] Use `serializeGameState` / `deserializeGameState` for saving and loading.
+- [ ] Add migrations when the schema changes and bump `STORAGE_VERSION`.
+- [ ] Cache formatting and batch autoroll computations.
 
 ## References
 
-- See `memory/designs/D004-numeric-safety.md` for the detailed design and `memory/designs/DEC001-serialization-decision.md` for serialization rationale.
+- `src/utils/decimal.ts` — implementation of Decimal helpers
+- `src/utils/storage.ts` — canonical save/load helpers
+- `memory/designs/D004-numeric-safety.md` — detailed design and rules
+- `memory/designs/DEC001-serialization-decision.md` — serialization decision rationale
