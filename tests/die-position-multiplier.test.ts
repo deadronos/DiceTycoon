@@ -54,7 +54,7 @@ describe('Die Position Multiplier', () => {
     
     const state = createDefaultGameState();
     // Unlock all six dice with same multiplier
-    state.dice.forEach((die, index) => {
+    state.dice.forEach(die => {
       die.unlocked = true;
       die.multiplier = new Decimal(1);
     });
