@@ -1,12 +1,12 @@
-import Decimal from '@patashu/break_eternity.js';
-import { GameState, DieState } from '../types/game';
+import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import { GameState } from '../types/game';
 import { GAME_CONSTANTS } from './constants';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
 
 /**
  * Calculate the cost to unlock a specific die
  */
-export function getUnlockCost(dieId: number): Decimal {
+export function getUnlockCost(dieId: number): DecimalType {
   return GAME_CONSTANTS.BASE_UNLOCK_COST.times(
     GAME_CONSTANTS.UNLOCK_COST_MULTIPLIER.pow(dieId - 1)
   );
@@ -15,7 +15,7 @@ export function getUnlockCost(dieId: number): Decimal {
 /**
  * Calculate the cost to level up a die
  */
-export function getLevelUpCost(currentLevel: number): Decimal {
+export function getLevelUpCost(currentLevel: number): DecimalType {
   return calculateCost(
     GAME_CONSTANTS.BASE_LEVEL_COST,
     GAME_CONSTANTS.LEVEL_COST_GROWTH,
@@ -26,7 +26,7 @@ export function getLevelUpCost(currentLevel: number): Decimal {
 /**
  * Calculate the cost to upgrade autoroll
  */
-export function getAutorollUpgradeCost(currentLevel: number): Decimal {
+export function getAutorollUpgradeCost(currentLevel: number): DecimalType {
   if (currentLevel === 0) {
     return GAME_CONSTANTS.AUTOROLL_UNLOCK_COST;
   }
@@ -40,14 +40,14 @@ export function getAutorollUpgradeCost(currentLevel: number): Decimal {
 /**
  * Calculate the cost to unlock animation for a die
  */
-export function getAnimationUnlockCost(currentLevel: number): Decimal {
+export function getAnimationUnlockCost(currentLevel: number): DecimalType {
   return GAME_CONSTANTS.ANIMATION_UNLOCK_COST.times(currentLevel + 1);
 }
 
 /**
  * Calculate the autoroll cooldown based on level
  */
-export function getAutorollCooldown(level: number): Decimal {
+export function getAutorollCooldown(level: number): DecimalType {
   if (level === 0) return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN;
   return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
     GAME_CONSTANTS.AUTOROLL_COOLDOWN_REDUCTION.pow(level)
@@ -57,7 +57,7 @@ export function getAutorollCooldown(level: number): Decimal {
 /**
  * Perform a roll for all unlocked dice
  */
-export function performRoll(state: GameState): { newState: GameState; creditsEarned: Decimal } {
+export function performRoll(state: GameState): { newState: GameState; creditsEarned: DecimalType } {
   let totalCredits = new Decimal(0);
   const newDice = state.dice.map(die => {
     if (!die.unlocked) return die;

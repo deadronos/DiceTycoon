@@ -1,13 +1,13 @@
 import React from 'react';
 import { DieState } from '../types/game';
 import { formatShort, formatFull } from '../utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 interface DieCardProps {
   die: DieState;
-  unlockCost?: Decimal;
-  levelUpCost?: Decimal;
-  animationUnlockCost?: Decimal;
+  unlockCost?: DecimalType;
+  levelUpCost?: DecimalType;
+  animationUnlockCost?: DecimalType;
   onUnlock: () => void;
   onLevelUp: () => void;
   onUnlockAnimation: () => void;
@@ -108,3 +108,5 @@ export const DieCard: React.FC<DieCardProps> = ({
     </div>
   );
 };
+
+export default DieCard;

@@ -1,9 +1,9 @@
 import React from 'react';
 import { formatShort } from '../utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 interface CreditsDisplayProps {
-  credits: Decimal;
+  credits: DecimalType;
 }
 
 export const CreditsDisplay: React.FC<CreditsDisplayProps> = ({ credits }) => {

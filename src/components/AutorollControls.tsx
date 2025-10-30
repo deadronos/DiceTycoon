@@ -1,11 +1,11 @@
 import React from 'react';
 import { AutorollState } from '../types/game';
 import { formatShort, formatFull } from '../utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 interface AutorollControlsProps {
   autoroll: AutorollState;
-  upgradeCost: Decimal;
+  upgradeCost: DecimalType;
   canUpgrade: boolean;
   onToggle: () => void;
   onUpgrade: () => void;
