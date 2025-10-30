@@ -63,7 +63,7 @@ export function performRoll(state: GameState): { newState: GameState; creditsEar
     if (!die.unlocked) return die;
     
     const face = rollDie();
-    const credits = die.multiplier.times(face);
+    const credits = die.multiplier.times(face).times(die.id);
     totalCredits = totalCredits.plus(credits);
     
     return {
@@ -224,7 +224,7 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   for (let i = 0; i < rollsPerformed; i++) {
     unlockedDice.forEach(die => {
       const face = rollDie();
-      totalCreditsEarned = totalCreditsEarned.plus(die.multiplier.times(face));
+      totalCreditsEarned = totalCreditsEarned.plus(die.multiplier.times(face).times(die.id));
     });
   }
   
