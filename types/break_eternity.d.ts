@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@patashu/break_eternity.js' {
   export interface DecimalInstance {
     toString(): string;

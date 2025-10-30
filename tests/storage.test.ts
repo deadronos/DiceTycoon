@@ -5,7 +5,7 @@ import { toDecimal } from '../src/utils/decimal';
 const KEY = 'test-storage-key';
 
 beforeEach(() => {
-  try { localStorage.removeItem(KEY); } catch (_error) { /* ignore */ }
+  try { localStorage.removeItem(KEY); } catch { /* ignore */ }
 });
 
 describe('storage.safeSave / safeLoad', () => {
@@ -20,10 +20,12 @@ describe('storage.safeSave / safeLoad', () => {
     safeSave(KEY, state);
     const loaded = safeLoad(KEY, null);
     expect(loaded).toBeTruthy();
-    expect(typeof loaded.credits.toString).toBe('function');
-    expect(loaded.credits.toString()).toBe('12345');
-    expect(Array.isArray(loaded.dice)).toBe(true);
-    expect(loaded.dice[0].multiplier).toBe('2');
+    // safeLoad returns unknown; narrow/cast for tests
+    const l = loaded as any;
+    expect(typeof l.credits.toString).toBe('function');
+    expect(l.credits.toString()).toBe('12345');
+    expect(Array.isArray(l.dice)).toBe(true);
+    expect(l.dice[0].multiplier).toBe('2');
   });
 
   it('returns fallback for missing key', () => {

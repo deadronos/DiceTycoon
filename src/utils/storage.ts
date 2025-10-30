@@ -1,7 +1,7 @@
 import Decimal from '@patashu/break_eternity.js';
-import { GameState, SerializedGameState, DieState, AutorollState } from '../types/game';
+import { GameState, SerializedGameState, DieState } from '../types/game';
 import { STORAGE_KEY, STORAGE_VERSION, GAME_CONSTANTS } from './constants';
-import { fromDecimalString, toDecimal } from './decimal';
+import { fromDecimalString } from './decimal';
 
 /**
  * Serialize GameState to a JSON-safe format
@@ -59,13 +59,24 @@ export function deserializeGameState(data: SerializedGameState): GameState {
 /**
  * Save game state to localStorage
  */
-export function safeSave(key: string = STORAGE_KEY, state: any): boolean {
+export function safeSave(key: string = STORAGE_KEY, state: unknown): boolean {
   try {
     // Handle both GameState and arbitrary objects for testing
-    let serialized: any;
-    
+    let serialized: unknown;
+
+    // Narrow unknown to a record for property checks
+    const s = state as Record<string, unknown>;
+
     // Check if it looks like a complete GameState
-    if (state.dice && Array.isArray(state.dice) && state.dice[0] && typeof state.dice[0].id !== 'undefined' && state.credits && state.autoroll && typeof state.autoroll === 'object') {
+    if (
+      s.dice &&
+      Array.isArray(s.dice) &&
+      (s.dice as Array<unknown>)[0] &&
+      typeof ((s.dice as Array<Record<string, unknown>>)[0].id) !== 'undefined' &&
+      s.credits &&
+      s.autoroll &&
+      typeof s.autoroll === 'object'
+    ) {
       // It's a GameState, serialize properly
       serialized = serializeGameState(state as GameState);
     } else {
@@ -84,24 +95,34 @@ export function safeSave(key: string = STORAGE_KEY, state: any): boolean {
 /**
  * Load game state from localStorage
  */
-export function safeLoad(key: string = STORAGE_KEY, fallback: any = null): any {
+export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): unknown {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
     
-    const parsed = JSON.parse(raw);
-    
+    const parsedRaw: unknown = JSON.parse(raw);
+    const p = parsedRaw as Record<string, unknown>;
+
     // Check if it's a full SerializedGameState by looking for version and expected structure
-    if (parsed.version && parsed.dice && Array.isArray(parsed.dice) && parsed.autoroll && typeof parsed.autoroll === 'object' && parsed.settings) {
-      return deserializeGameState(parsed as SerializedGameState);
+    if (
+      p.version &&
+      p.dice &&
+      Array.isArray(p.dice) &&
+      p.autoroll &&
+      typeof p.autoroll === 'object' &&
+      p.settings
+    ) {
+      return deserializeGameState(p as unknown as SerializedGameState);
     }
-    
+
     // Otherwise it might be a simpler test object - only deserialize credits if present
-    if (parsed.credits && typeof parsed.credits === 'string') {
-      parsed.credits = fromDecimalString(parsed.credits);
+    if (p.credits && typeof p.credits === 'string') {
+      // mutate parsed object to convert credits string into Decimal
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (p as any).credits = fromDecimalString(p.credits as string);
     }
-    
-    return parsed;
+
+    return p;
   } catch (err) {
     console.error('Failed to load game state:', err);
     return fallback;

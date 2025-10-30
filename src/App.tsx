@@ -35,9 +35,10 @@ import './styles.css';
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const loaded = safeLoad();
-    if (loaded) {
+    // safeLoad returns unknown; narrow before treating as GameState
+    if (loaded && typeof loaded === 'object' && 'credits' in loaded && 'dice' in loaded) {
       // Calculate offline progress
-      const withOfflineProgress = calculateOfflineProgress(loaded, Date.now());
+      const withOfflineProgress = calculateOfflineProgress(loaded as GameState, Date.now());
       return withOfflineProgress;
     }
     return createDefaultGameState();
