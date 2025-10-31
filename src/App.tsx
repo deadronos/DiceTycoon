@@ -33,10 +33,13 @@ import {
   calculateLuckGain,
   preparePrestigePreview,
   performPrestigeReset,
+  buyPrestigeUpgrade,
+  canBuyPrestigeUpgrade,
+  getPrestigeUpgradeCost,
 } from './utils/game-logic';
 import { canAfford } from './utils/decimal';
 import Decimal from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboResult, ComboIntensity } from './types/combo';
 import './styles.css';
@@ -223,6 +226,14 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Prestige shop handler
+  const handleBuyPrestigeUpgrade = useCallback((key: PrestigeShopKey) => {
+    const newState = buyPrestigeUpgrade(gameState, key);
+    if (newState) {
+      setGameState(newState);
+    }
+  }, [gameState]);
+
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = comboMetadata?.intensity ?? 'low';
@@ -346,6 +357,11 @@ export const App: React.FC = () => {
         }}
         luckGain={calculateLuckGain(gameState)}
         currentLuck={gameState.prestige?.luckPoints ?? new Decimal(0)}
+        gameState={gameState}
+        onBuyUpgrade={handleBuyPrestigeUpgrade}
+        canBuyUpgrade={canBuyPrestigeUpgrade}
+        getUpgradeCost={getPrestigeUpgradeCost}
+        shopItems={PRESTIGE_SHOP_ITEMS}
       />
     </div>
   );

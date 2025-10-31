@@ -32,6 +32,52 @@ export const GAME_CONSTANTS: GameConstants = {
 export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
 export const STORAGE_VERSION = 'v2';
 
+// Prestige shop item definitions
+export const PRESTIGE_SHOP_ITEMS = {
+  multiplier: {
+    name: 'Fortune Amplifier',
+    description: '+5% flat credit multiplier per level',
+    baseCost: new Decimal(5),
+    costGrowth: new Decimal(3),
+    maxLevel: 10,
+    category: 'passive',
+  },
+  autobuyer: {
+    name: 'Autobuyer: Upgrades',
+    description: 'Automatically buy cheapest die upgrade when affordable',
+    baseCost: new Decimal(4),
+    costGrowth: new Decimal(2),
+    maxLevel: 1,
+    category: 'qol',
+  },
+  guaranteedReroll: {
+    name: 'Guaranteed Reroll Slot',
+    description: 'Grants one guaranteed reroll per roll (applies to lowest die)',
+    baseCost: new Decimal(10),
+    costGrowth: new Decimal(4),
+    maxLevel: 2,
+    category: 'gameplay',
+  },
+  rerollTokens: {
+    name: 'Reroll Token Pack',
+    description: 'Buy 5 reroll tokens for manual die rerolls',
+    baseCost: new Decimal(2),
+    costGrowth: new Decimal(1.8),
+    maxLevel: -1, // unlimited, consumable
+    category: 'consumable',
+  },
+  extraDieSocket: {
+    name: 'Lucky Die Socket',
+    description: 'Unlock access to a 7th die (experimental high-multiplier die)',
+    baseCost: new Decimal(50),
+    costGrowth: new Decimal(1),
+    maxLevel: 1,
+    category: 'prestige-exclusive',
+  },
+} as const;
+
+export type PrestigeShopKey = keyof typeof PRESTIGE_SHOP_ITEMS;
+
 export const ROLL_ANIMATION_DURATION = 800; // milliseconds
 export const CREDIT_POPUP_DURATION = 2000; // milliseconds
 export const AUTO_SAVE_INTERVAL = 30000; // 30 seconds

@@ -34,6 +34,10 @@ export interface GameState {
     luckPoints: DecimalType;
     luckTier: number;
     totalPrestiges: number;
+    shop: Record<string, number>; // key -> purchaseLevel
+    consumables: {
+      rerollTokens: number;
+    };
   };
 }
 
@@ -48,6 +52,10 @@ export interface SerializedGameState {
     luckPoints: string;
     luckTier: number;
     totalPrestiges: number;
+    shop: Record<string, number>;
+    consumables: {
+      rerollTokens: number;
+    };
   };
   version: string;
 }

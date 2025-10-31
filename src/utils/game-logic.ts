@@ -1,6 +1,6 @@
 import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameState } from '../types/game';
-import { GAME_CONSTANTS } from './constants';
+import { GAME_CONSTANTS, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
 import { detectCombo, getComboMultiplier } from './combos';
 import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
@@ -86,9 +86,8 @@ export function performRoll(
     finalCredits = totalCredits.times(multiplier);
   }
 
-  // Apply prestige/luck multiplier if present
-  const luckMultiplier = getLuckMultiplier(state);
-  finalCredits = finalCredits.times(luckMultiplier);
+  // Apply prestige multipliers (luck + shop)
+  finalCredits = applyPrestigeMultipliers(finalCredits, state);
 
   return {
     newState: {
@@ -160,11 +159,13 @@ export function performPrestigeReset(state: GameState): GameState {
   const defaultState = createDefaultGameState();
 
   // merge prestige
-  const prevPrestige = state.prestige ?? { luckPoints: new Decimal(0), luckTier: 0, totalPrestiges: 0 };
+  const prevPrestige = state.prestige ?? { luckPoints: new Decimal(0), luckTier: 0, totalPrestiges: 0, shop: {}, consumables: { rerollTokens: 0 } };
   const newPrestige = {
     luckPoints: prevPrestige.luckPoints.plus(gain),
     luckTier: prevPrestige.luckTier,
     totalPrestiges: prevPrestige.totalPrestiges + (gain.gt(0) ? 1 : 0),
+    shop: prevPrestige.shop || {},
+    consumables: prevPrestige.consumables || { rerollTokens: 0 },
   };
 
   return {
@@ -340,3 +341,161 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
     lastSaveTimestamp: currentTime,
   };
 }
+
+/**
+ * Get the cost to purchase a prestige shop item at a given level
+ */
+export function getPrestigeUpgradeCost(key: PrestigeShopKey, currentLevel: number): DecimalType {
+  const item = PRESTIGE_SHOP_ITEMS[key];
+  if (!item) return new Decimal(0);
+  return item.baseCost.times(item.costGrowth.pow(currentLevel));
+}
+
+/**
+ * Check if player can afford a prestige upgrade
+ */
+export function canBuyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): boolean {
+  const item = PRESTIGE_SHOP_ITEMS[key];
+  if (!item || !state.prestige) return false;
+  
+  const currentLevel = state.prestige.shop[key] ?? 0;
+  if (item.maxLevel >= 0 && currentLevel >= item.maxLevel) return false;
+  
+  const cost = getPrestigeUpgradeCost(key, currentLevel);
+  return state.prestige.luckPoints.gte(cost);
+}
+
+/**
+ * Buy a prestige upgrade, returning new state or null if purchase fails
+ */
+export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): GameState | null {
+  const item = PRESTIGE_SHOP_ITEMS[key];
+  if (!item || !state.prestige) return null;
+  
+  const currentLevel = state.prestige.shop[key] ?? 0;
+  if (item.maxLevel >= 0 && currentLevel >= item.maxLevel) return null;
+  
+  const cost = getPrestigeUpgradeCost(key, currentLevel);
+  if (state.prestige.luckPoints.lt(cost)) return null;
+  
+  // Consumable items (reroll tokens) don't increment level, add tokens instead
+  if (key === 'rerollTokens') {
+    return {
+      ...state,
+      prestige: {
+        ...state.prestige,
+        luckPoints: state.prestige.luckPoints.minus(cost),
+        consumables: {
+          ...state.prestige.consumables,
+          rerollTokens: state.prestige.consumables.rerollTokens + 5,
+        },
+      },
+    };
+  }
+  
+  // Regular shop items: increment level
+  return {
+    ...state,
+    prestige: {
+      ...state.prestige,
+      luckPoints: state.prestige.luckPoints.minus(cost),
+      shop: {
+        ...state.prestige.shop,
+        [key]: currentLevel + 1,
+      },
+    },
+  };
+}
+
+/**
+ * Get the total multiplier from all prestige shop sources
+ */
+export function getShopMultiplier(state: GameState): DecimalType {
+  if (!state.prestige || !state.prestige.shop) return new Decimal(1);
+  
+  const fortuneAmplifierLevel = state.prestige.shop.multiplier ?? 0;
+  if (fortuneAmplifierLevel <= 0) return new Decimal(1);
+  
+  // +5% per level = 0.05 per level
+  const bonus = new Decimal(fortuneAmplifierLevel).times(0.05);
+  return new Decimal(1).plus(bonus);
+}
+
+/**
+ * Check if guaranteed reroll should be applied
+ */
+export function getGuaranteedRerollLevel(state: GameState): number {
+  return state.prestige?.shop?.guaranteedReroll ?? 0;
+}
+
+/**
+ * Apply prestige effects to a roll (guaranteed reroll on lowest die)
+ * Returns the new state after applying guaranteed rerolls if applicable
+ */
+export function applyGuaranteedReroll(
+  state: GameState,
+  rolledFaces: number[]
+): { newState: GameState; faces: number[] } {
+  const guaranteedLevel = getGuaranteedRerollLevel(state);
+  if (guaranteedLevel <= 0 || rolledFaces.length === 0) {
+    return { newState: state, faces: rolledFaces };
+  }
+  
+  // Apply up to guaranteedLevel rerolls to the lowest face
+  let newFaces = [...rolledFaces];
+  const newDice = [...state.dice];
+  
+  for (let i = 0; i < guaranteedLevel; i++) {
+    const lowestIdx = newFaces.indexOf(Math.min(...newFaces));
+    if (lowestIdx >= 0) {
+      const newFace = rollDie();
+      newFaces[lowestIdx] = newFace;
+      // update die visual
+      newDice[lowestIdx] = {
+        ...newDice[lowestIdx],
+        currentFace: newFace,
+      };
+    }
+  }
+  
+  return { newState: { ...state, dice: newDice }, faces: newFaces };
+}
+
+/**
+ * Consume a reroll token if available (for manual reroll mechanic)
+ */
+export function consumeRerollToken(state: GameState): GameState | null {
+  if (!state.prestige || state.prestige.consumables.rerollTokens <= 0) return null;
+  
+  return {
+    ...state,
+    prestige: {
+      ...state.prestige,
+      consumables: {
+        ...state.prestige.consumables,
+        rerollTokens: state.prestige.consumables.rerollTokens - 1,
+      },
+    },
+  };
+}
+
+/**
+ * Get autoroll cooldown reduction from prestige shop
+ */
+export function getAutorollCooldownMultiplier(state: GameState): DecimalType {
+  const autorollLevel = state.prestige?.shop?.autorollCooldown ?? 0;
+  if (autorollLevel <= 0) return new Decimal(1);
+  
+  // 5% reduction per level = multiply by (0.95)^level
+  return new Decimal(0.95).pow(autorollLevel);
+}
+
+/**
+ * Apply all prestige effects to modify final credits
+ */
+export function applyPrestigeMultipliers(baseCredits: DecimalType, state: GameState): DecimalType {
+  const luckMult = getLuckMultiplier(state);
+  const shopMult = getShopMultiplier(state);
+  return baseCredits.times(luckMult).times(shopMult);
+}
+
