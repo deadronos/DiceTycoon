@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { performRoll } from '../src/utils/game-logic';
+import { getComboMultiplier } from '../src/utils/combos';
 import { createDefaultGameState } from '../src/utils/storage';
 import Decimal from '@patashu/break_eternity.js';
 import * as decimalUtils from '../src/utils/decimal';
@@ -16,12 +17,14 @@ describe('Die Position Multiplier', () => {
     state.dice[1].unlocked = true;
     state.dice[1].multiplier = new Decimal(1);
     
-    const { creditsEarned } = performRoll(state);
+    const { creditsEarned, combo } = performRoll(state);
     
     // Die 1: face(6) * multiplier(1) * die.id(1) = 6
     // Die 2: face(6) * multiplier(1) * die.id(2) = 12
-    // Total: 6 + 12 = 18
-    expect(creditsEarned.toNumber()).toBe(18);
+    // Total base: 18, may be multiplied by combo multiplier
+    const baseTotal = 18;
+    const multiplier = combo ? getComboMultiplier(combo).toNumber() : 1;
+    expect(creditsEarned.toNumber()).toBeCloseTo(baseTotal * multiplier);
     
     vi.restoreAllMocks();
   });
@@ -38,13 +41,11 @@ describe('Die Position Multiplier', () => {
     state.dice[2].unlocked = true;
     state.dice[2].multiplier = new Decimal(2);
     
-    const { creditsEarned } = performRoll(state);
-    
-    // Die 1: face(5) * multiplier(2) * die.id(1) = 10
-    // Die 2: face(5) * multiplier(2) * die.id(2) = 20
-    // Die 3: face(5) * multiplier(2) * die.id(3) = 30
-    // Total: 10 + 20 + 30 = 60
-    expect(creditsEarned.toNumber()).toBe(60);
+    const { creditsEarned: credits2, combo: combo2 } = performRoll(state);
+
+    const baseTotal2 = 60;
+    const multiplier2 = combo2 ? getComboMultiplier(combo2).toNumber() : 1;
+    expect(credits2.toNumber()).toBeCloseTo(baseTotal2 * multiplier2);
     
     vi.restoreAllMocks();
   });
@@ -59,16 +60,11 @@ describe('Die Position Multiplier', () => {
       die.multiplier = new Decimal(1);
     });
     
-    const { creditsEarned } = performRoll(state);
-    
-    // Die 1: face(4) * multiplier(1) * die.id(1) = 4
-    // Die 2: face(4) * multiplier(1) * die.id(2) = 8
-    // Die 3: face(4) * multiplier(1) * die.id(3) = 12
-    // Die 4: face(4) * multiplier(1) * die.id(4) = 16
-    // Die 5: face(4) * multiplier(1) * die.id(5) = 20
-    // Die 6: face(4) * multiplier(1) * die.id(6) = 24
-    // Total: 4 + 8 + 12 + 16 + 20 + 24 = 84
-    expect(creditsEarned.toNumber()).toBe(84);
+    const { creditsEarned: credits3, combo: combo3 } = performRoll(state);
+
+    const baseTotal3 = 84;
+    const multiplier3 = combo3 ? getComboMultiplier(combo3).toNumber() : 1;
+    expect(credits3.toNumber()).toBeCloseTo(baseTotal3 * multiplier3);
     
     vi.restoreAllMocks();
   });

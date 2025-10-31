@@ -1,4 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
+import Decimal from '@patashu/break_eternity.js';
 import type { ComboResult, ComboKind, ComboIntensity } from '../types/combo';
 
 const COMBO_PRIORITY: Array<{ threshold: number; kind: ComboKind }> = [
@@ -35,6 +36,24 @@ const COMBO_EMOJIS: Record<ComboKind, string> = {
   sixKind: '🌟',
   flush: '🌈',
 };
+
+// Bonus multipliers applied to total roll when a combo is detected.
+// Values chosen to give small rewards for common combos and larger
+// rewards for rare combos (flush/six of a kind).
+const COMBO_BONUS_MULTIPLIER: Record<ComboKind, number> = {
+  pair: 1.05,
+  triple: 1.1,
+  fourKind: 1.2,
+  fiveKind: 1.35,
+  sixKind: 1.6,
+  flush: 2.0,
+};
+
+export function getComboMultiplier(combo: ComboResult): Decimal {
+  if (!combo) return new Decimal(1);
+  const value = COMBO_BONUS_MULTIPLIER[combo.kind] ?? 1;
+  return new Decimal(value);
+}
 
 const numberWord = (value: number): string => {
   const words: Record<number, string> = {
@@ -113,9 +132,12 @@ export function getComboMetadata(combo: ComboResult): ComboMetadata {
 
   if (combo.kind === 'flush' && combo.faces) {
     const sequence = combo.faces.join(' · ');
+    // include bonus multiplier info
+    const multiplier = getComboMultiplier(combo);
+    const percent = Math.round((multiplier.toNumber() - 1) * 100);
     return {
       title: `${emoji} ${label}!`,
-      message: `Perfect sequence rolled: ${sequence}`,
+      message: `Perfect sequence rolled: ${sequence} (+${percent}% credits)` ,
       intensity,
       emoji,
     };
@@ -124,9 +146,12 @@ export function getComboMetadata(combo: ComboResult): ComboMetadata {
   const faceWord = combo.face ? `${combo.face}s` : 'dice';
   const countWord = numberWord(combo.count);
 
+  const multiplier = getComboMultiplier(combo);
+  const percent = Math.round((multiplier.toNumber() - 1) * 100);
+
   return {
     title: `${emoji} ${label}!`,
-    message: `You rolled ${countWord} ${faceWord}!`,
+    message: `You rolled ${countWord} ${faceWord}! (+${percent}% credits)`,
     intensity,
     emoji,
   };
