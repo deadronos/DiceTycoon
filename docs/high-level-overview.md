@@ -14,6 +14,30 @@ Dice Tycoon is an incremental idle game built around rolling and upgrading a col
 - **Animation Upgrades** – Visual flair for dice can be purchased separately, giving a cosmetic sense of progression without affecting earnings.
 - **Autoroll Automation** – Autoroll upgrades unlock and accelerate hands-free rolling. Every upgrade reduces the cooldown between automatic rolls and keeps the automation toggled on by default.
 
+## Combos & Bonuses
+
+In addition to the per-die earnings formula, certain roll patterns (combos) are detected and grant a credits bonus on top of the base payout for that roll. Combos are intentionally rare and provide modest bonuses to preserve the importance of die multipliers and progression.
+
+Common combos detected by the game:
+
+- Pair (two matching faces)
+- Triple (three matching faces)
+- Four / Five / Six of a kind
+- Flush (perfect sequence across all dice)
+
+When a combo is detected the total credits from that roll are multiplied by a combo-dependent multiplier. The UI presents a transient `ComboToast` (title, message, emoji) and a `ConfettiBurst` whose intensity reflects combo rarity.
+
+Default multipliers (configurable in `src/utils/combos.ts`):
+
+- pair: ×1.05 (+5%)
+- triple: ×1.10 (+10%)
+- fourKind: ×1.20 (+20%)
+- fiveKind: ×1.35 (+35%)
+- sixKind: ×1.60 (+60%)
+- flush: ×2.00 (+100%)
+
+These values are tunable in the code if you want combos to be more or less impactful.
+
 ## Economy & Balancing
 - Unlock, level, autoroll, and animation costs draw from shared economic helpers that apply exponential growth curves to keep late-game prices challenging.
 - Roll payouts are calculated per die, combining the die's multiplier, the random face result, and the die's roster index. This ensures higher-tier dice pay out more even before upgrades.
