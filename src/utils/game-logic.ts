@@ -1,7 +1,7 @@
 import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameState } from '../types/game';
 import { GAME_CONSTANTS } from './constants';
-import { detectCombo } from './combos';
+import { detectCombo, getComboMultiplier } from './combos';
 import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
 
@@ -78,16 +78,22 @@ export function performRoll(
       isRolling: true,
     };
   });
-  
+  const combo = detectCombo(rolledFaces);
+  let finalCredits = totalCredits;
+  if (combo) {
+    const multiplier = getComboMultiplier(combo);
+    finalCredits = totalCredits.times(multiplier);
+  }
+
   return {
     newState: {
       ...state,
-      credits: state.credits.plus(totalCredits),
+      credits: state.credits.plus(finalCredits),
       dice: newDice,
       totalRolls: state.totalRolls + 1,
     },
-    creditsEarned: totalCredits,
-    combo: detectCombo(rolledFaces),
+    creditsEarned: finalCredits,
+    combo,
   };
 }
 
@@ -229,10 +235,22 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   const unlockedDice = state.dice.filter(d => d.unlocked);
   
   for (let i = 0; i < rollsPerformed; i++) {
+    const rolledFaces: number[] = [];
+    // sum this roll's base credits
+    let rollBase = new Decimal(0);
     unlockedDice.forEach(die => {
       const face = rollDie();
-      totalCreditsEarned = totalCreditsEarned.plus(die.multiplier.times(face).times(die.id));
+      rolledFaces.push(face);
+      rollBase = rollBase.plus(die.multiplier.times(face).times(die.id));
     });
+
+    const combo = detectCombo(rolledFaces);
+    if (combo) {
+      const multiplier = getComboMultiplier(combo);
+      totalCreditsEarned = totalCreditsEarned.plus(rollBase.times(multiplier));
+    } else {
+      totalCreditsEarned = totalCreditsEarned.plus(rollBase);
+    }
   }
   
   return {

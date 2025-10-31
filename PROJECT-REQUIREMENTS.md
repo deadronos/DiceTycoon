@@ -25,6 +25,7 @@ Core experience highlights:
   - Player presses "Roll" -> all unlocked dice animate and produce face values simultaneously.
   - Possibly show intermediate rolling animation frames then final face.
   - Credits earned = sum(face_i * mult_i) across all unlocked dice.
+  - Combos (pairs, triples, of-a-kind, flush/sequence) are detected and apply a small multiplier to the total roll payout. The combo detection and default multipliers live in `src/utils/combos.ts` and are surfaced in the UI via a `ComboToast` and visual effects.
   - All arithmetic uses Decimal from @Patashu/break_eternity.js.
 
 - Dice:
