@@ -42,9 +42,14 @@ export const ConfettiBurst: React.FC<ConfettiBurstProps> = ({ trigger, intensity
       return;
     }
 
-    setPieces(generatePieces());
+    // Avoid calling setState synchronously inside an effect to prevent
+    // cascading renders. Schedule the pieces creation on the next frame.
+    const raf = window.requestAnimationFrame(() => setPieces(generatePieces()));
     const timeout = window.setTimeout(() => setPieces([]), 1800);
-    return () => window.clearTimeout(timeout);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(timeout);
+    };
   }, [trigger, generatePieces]);
 
   if (!pieces.length) {
