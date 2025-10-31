@@ -29,6 +29,16 @@ export interface GameState {
   settings: GameSettings;
   totalRolls: number;
   lastSaveTimestamp: number;
+  // Prestige / ascension state
+  prestige?: {
+    luckPoints: DecimalType;
+    luckTier: number;
+    totalPrestiges: number;
+    shop: Record<string, number>; // key -> purchaseLevel
+    consumables: {
+      rerollTokens: number;
+    };
+  };
 }
 
 export interface SerializedGameState {
@@ -38,6 +48,15 @@ export interface SerializedGameState {
   settings: GameSettings;
   totalRolls: number;
   lastSaveTimestamp: number;
+  prestige?: {
+    luckPoints: string;
+    luckTier: number;
+    totalPrestiges: number;
+    shop: Record<string, number>;
+    consumables: {
+      rerollTokens: number;
+    };
+  };
   version: string;
 }
 

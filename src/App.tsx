@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameState } from './types/game';
 import { CreditsDisplay } from './components/CreditsDisplay';
+import { LuckCurrencyDisplay } from './components/LuckCurrencyDisplay';
+import { PrestigePanel } from './components/PrestigePanel';
 import { DieCard } from './components/DieCard';
 import { RollButton } from './components/RollButton';
 import { AutorollControls } from './components/AutorollControls';
@@ -28,10 +30,16 @@ import {
   getAutorollUpgradeCost,
   getAnimationUnlockCost,
   calculateOfflineProgress,
+  calculateLuckGain,
+  preparePrestigePreview,
+  performPrestigeReset,
+  buyPrestigeUpgrade,
+  canBuyPrestigeUpgrade,
+  getPrestigeUpgradeCost,
 } from './utils/game-logic';
 import { canAfford } from './utils/decimal';
 import Decimal from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboResult, ComboIntensity } from './types/combo';
 import './styles.css';
@@ -54,6 +62,7 @@ export const App: React.FC = () => {
   const [comboMetadata, setComboMetadata] = useState<ComboMetadata | null>(null);
   const [showComboToast, setShowComboToast] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
+  const [showPrestige, setShowPrestige] = useState(false);
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
 
@@ -217,6 +226,14 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Prestige shop handler
+  const handleBuyPrestigeUpgrade = useCallback((key: PrestigeShopKey) => {
+    const newState = buyPrestigeUpgrade(gameState, key);
+    if (newState) {
+      setGameState(newState);
+    }
+  }, [gameState]);
+
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = comboMetadata?.intensity ?? 'low';
@@ -226,7 +243,13 @@ export const App: React.FC = () => {
     <div id="app">
       <header className="header">
         <h1>🎲 Dice Tycoon</h1>
-        <CreditsDisplay credits={gameState.credits} />
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <CreditsDisplay credits={gameState.credits} />
+            <LuckCurrencyDisplay
+              luckPoints={gameState.prestige?.luckPoints ?? new Decimal(0)}
+              onOpen={() => setShowPrestige(true)}
+            />
+          </div>
         <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--color-text-dim)' }}>
           Total Rolls: {gameState.totalRolls.toLocaleString()}
         </div>
@@ -321,6 +344,24 @@ export const App: React.FC = () => {
         metadata={comboMetadata}
         visible={showComboToast}
         onClose={handleComboToastClose}
+      />
+      <PrestigePanel
+        visible={showPrestige}
+        onClose={() => setShowPrestige(false)}
+        onConfirm={() => {
+          const newState = performPrestigeReset(gameState);
+          setGameState(newState);
+          // Immediately save new state
+          safeSave(undefined, { ...newState, lastSaveTimestamp: Date.now() });
+          setShowPrestige(false);
+        }}
+        luckGain={calculateLuckGain(gameState)}
+        currentLuck={gameState.prestige?.luckPoints ?? new Decimal(0)}
+        gameState={gameState}
+        onBuyUpgrade={handleBuyPrestigeUpgrade}
+        canBuyUpgrade={canBuyPrestigeUpgrade}
+        getUpgradeCost={getPrestigeUpgradeCost}
+        shopItems={PRESTIGE_SHOP_ITEMS}
       />
     </div>
   );

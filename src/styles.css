@@ -686,3 +686,42 @@ body {
     opacity: 0;
   }
 }
+
+/* Prestige Panel */
+.prestige-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300;
+  padding: 20px;
+}
+
+.prestige-panel {
+  background: linear-gradient(135deg, var(--color-bg-light) 0%, var(--color-bg-lighter) 100%);
+  border: 2px solid var(--color-primary);
+  min-width: 300px;
+  padding: 24px;
+  position: relative;
+}
+
+.prestige-panel h2 {
+  margin-bottom: 16px;
+  font-size: 1.6rem;
+  color: var(--color-primary);
+}
+
+.prestige-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prestige-panel button:disabled:hover {
+  background-color: var(--color-bg-lighter);
+}
+
