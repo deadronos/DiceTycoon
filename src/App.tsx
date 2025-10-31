@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameState } from './types/game';
 import { CreditsDisplay } from './components/CreditsDisplay';
 import { DieCard } from './components/DieCard';
 import { RollButton } from './components/RollButton';
 import { AutorollControls } from './components/AutorollControls';
 import { CreditPopup } from './components/CreditPopup';
+import { ComboToast } from './components/ComboToast';
+import { ConfettiBurst } from './components/ConfettiBurst';
 import {
   createDefaultGameState,
   safeLoad,
@@ -30,6 +32,8 @@ import {
 import { canAfford } from './utils/decimal';
 import Decimal from '@patashu/break_eternity.js';
 import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL } from './utils/constants';
+import { getComboMetadata, type ComboMetadata } from './utils/combos';
+import type { ComboResult, ComboIntensity } from './types/combo';
 import './styles.css';
 
 export const App: React.FC = () => {
@@ -46,6 +50,10 @@ export const App: React.FC = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
+  const [comboToast, setComboToast] = useState<{ combo: ComboResult; id: number } | null>(null);
+  const [comboMetadata, setComboMetadata] = useState<ComboMetadata | null>(null);
+  const [showComboToast, setShowComboToast] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
 
@@ -79,20 +87,50 @@ export const App: React.FC = () => {
     };
   }, [saveGame]);
 
+  const handleComboToastClose = useCallback(() => {
+    setShowComboToast(false);
+  }, []);
+
   // Handle roll
   const handleRoll = useCallback(() => {
-    const { newState, creditsEarned } = performRoll(gameState);
+    const { newState, creditsEarned, combo } = performRoll(gameState);
     setGameState(newState);
 
     // Show popup
     setPopupCredits(creditsEarned);
     setShowPopup(true);
 
+    if (combo) {
+      const timestamp = Date.now() + Math.random();
+      const metadata = getComboMetadata(combo);
+      setComboToast({ combo, id: timestamp });
+      setComboMetadata(metadata);
+      setShowComboToast(true);
+      setConfettiTrigger(timestamp);
+    }
+
     // Stop rolling animation after duration
     setTimeout(() => {
       setGameState(prev => stopRollingAnimation(prev));
     }, ROLL_ANIMATION_DURATION);
   }, [gameState]);
+
+  useEffect(() => {
+    if (showComboToast) {
+      return;
+    }
+
+    if (!comboMetadata && !comboToast) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setComboMetadata(null);
+      setComboToast(null);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [showComboToast, comboMetadata, comboToast]);
 
   // Handle autoroll
   useEffect(() => {
@@ -181,6 +219,8 @@ export const App: React.FC = () => {
 
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
+  const confettiIntensity: ComboIntensity = comboMetadata?.intensity ?? 'low';
+  const activeCombo = useMemo(() => comboToast?.combo ?? null, [comboToast]);
 
   return (
     <div id="app">
@@ -275,6 +315,13 @@ export const App: React.FC = () => {
           onComplete={() => setShowPopup(false)}
         />
       )}
+      <ConfettiBurst trigger={confettiTrigger} intensity={confettiIntensity} />
+      <ComboToast
+        combo={activeCombo}
+        metadata={comboMetadata}
+        visible={showComboToast}
+        onClose={handleComboToastClose}
+      />
     </div>
   );
 };
