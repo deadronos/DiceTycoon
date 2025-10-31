@@ -1,6 +1,8 @@
 import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameState } from '../types/game';
 import { GAME_CONSTANTS } from './constants';
+import { detectCombo } from './combos';
+import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
 
 /**
@@ -57,15 +59,19 @@ export function getAutorollCooldown(level: number): DecimalType {
 /**
  * Perform a roll for all unlocked dice
  */
-export function performRoll(state: GameState): { newState: GameState; creditsEarned: DecimalType } {
+export function performRoll(
+  state: GameState
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
   let totalCredits = new Decimal(0);
+  const rolledFaces: number[] = [];
   const newDice = state.dice.map(die => {
     if (!die.unlocked) return die;
-    
+
     const face = rollDie();
     const credits = die.multiplier.times(face).times(die.id);
     totalCredits = totalCredits.plus(credits);
-    
+    rolledFaces.push(face);
+
     return {
       ...die,
       currentFace: face,
@@ -81,6 +87,7 @@ export function performRoll(state: GameState): { newState: GameState; creditsEar
       totalRolls: state.totalRolls + 1,
     },
     creditsEarned: totalCredits,
+    combo: detectCombo(rolledFaces),
   };
 }
 
