@@ -27,6 +27,13 @@ export function serializeGameState(state: GameState): SerializedGameState {
     settings: state.settings,
     totalRolls: state.totalRolls,
     lastSaveTimestamp: state.lastSaveTimestamp,
+    prestige: state.prestige
+      ? {
+          luckPoints: state.prestige.luckPoints.toString(),
+          luckTier: state.prestige.luckTier,
+          totalPrestiges: state.prestige.totalPrestiges,
+        }
+      : undefined,
   };
 }
 
@@ -53,6 +60,17 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     settings: data.settings,
     totalRolls: data.totalRolls,
     lastSaveTimestamp: data.lastSaveTimestamp,
+    prestige: data.prestige
+      ? {
+          luckPoints: fromDecimalString(data.prestige.luckPoints, new Decimal(0)),
+          luckTier: typeof data.prestige.luckTier === 'number' ? data.prestige.luckTier : 0,
+          totalPrestiges: typeof data.prestige.totalPrestiges === 'number' ? data.prestige.totalPrestiges : 0,
+        }
+      : {
+          luckPoints: new Decimal(0),
+          luckTier: 0,
+          totalPrestiges: 0,
+        },
   };
 }
 
@@ -112,6 +130,7 @@ export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): u
       typeof p.autoroll === 'object' &&
       p.settings
     ) {
+      // If legacy v1 save (no prestige), still deserialize and defaults will be applied
       return deserializeGameState(p as unknown as SerializedGameState);
     }
 
@@ -162,6 +181,11 @@ export function createDefaultGameState(): GameState {
     },
     totalRolls: 0,
     lastSaveTimestamp: Date.now(),
+    prestige: {
+      luckPoints: new Decimal(0),
+      luckTier: 0,
+      totalPrestiges: 0,
+    },
   };
 }
 

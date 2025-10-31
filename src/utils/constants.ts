@@ -29,8 +29,8 @@ export const GAME_CONSTANTS: GameConstants = {
   MAX_ANIMATION_LEVEL: 3,
 };
 
-export const STORAGE_KEY = 'dicetycoon.gamestate.v1';
-export const STORAGE_VERSION = 'v1';
+export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
+export const STORAGE_VERSION = 'v2';
 
 export const ROLL_ANIMATION_DURATION = 800; // milliseconds
 export const CREDIT_POPUP_DURATION = 2000; // milliseconds

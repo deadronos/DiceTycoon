@@ -4,6 +4,7 @@ import { GAME_CONSTANTS } from './constants';
 import { detectCombo, getComboMultiplier } from './combos';
 import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
+import { createDefaultGameState } from './storage';
 
 /**
  * Calculate the cost to unlock a specific die
@@ -85,6 +86,10 @@ export function performRoll(
     finalCredits = totalCredits.times(multiplier);
   }
 
+  // Apply prestige/luck multiplier if present
+  const luckMultiplier = getLuckMultiplier(state);
+  finalCredits = finalCredits.times(luckMultiplier);
+
   return {
     newState: {
       ...state,
@@ -94,6 +99,81 @@ export function performRoll(
     },
     creditsEarned: finalCredits,
     combo,
+  };
+}
+
+/**
+ * Compute the prestige/luck multiplier applied to roll earnings.
+ * Default: 1 + luckPoints * 0.02, capped at 10x
+ */
+export function getLuckMultiplier(state: GameState): DecimalType {
+  if (!state.prestige || !state.prestige.luckPoints) return new Decimal(1);
+  const points = state.prestige.luckPoints;
+  try {
+    const mult = new Decimal(1).plus(points.times(0.02));
+    // cap at 10
+    return Decimal.min(mult, new Decimal(10));
+  } catch (err) {
+    return new Decimal(1);
+  }
+}
+
+/**
+ * Calculate how many luck points the player would gain on a prestige reset.
+ * Formula (MVP): floor( max(log10(totalCredits) - 3, 0) * 0.25 )
+ */
+export function calculateLuckGain(state: GameState): DecimalType {
+  try {
+    const credits = state.credits || new Decimal(0);
+    // guard: if credits <= 0, return 0
+    if (credits.lte(0)) return new Decimal(0);
+
+    const log10 = Decimal.log10(credits);
+    const base = Decimal.max(log10.minus(3), new Decimal(0));
+    const gain = base.times(0.25).floor();
+    return gain.max(0);
+  } catch (err) {
+    return new Decimal(0);
+  }
+}
+
+/**
+ * Prepare preview information for prestige UI
+ */
+export function preparePrestigePreview(state: GameState) {
+  const luckGain = calculateLuckGain(state);
+  return {
+    luckGain,
+    // short description of what will persist
+    retained: ['prestige', 'settings'],
+  };
+}
+
+/**
+ * Perform prestige reset: award luck points and reset core progression.
+ * Returns a new GameState reflecting the reset.
+ */
+export function performPrestigeReset(state: GameState): GameState {
+  const gain = calculateLuckGain(state);
+
+  // Build new base state (soft reset: keep prestige accumulative)
+  const defaultState = createDefaultGameState();
+
+  // merge prestige
+  const prevPrestige = state.prestige ?? { luckPoints: new Decimal(0), luckTier: 0, totalPrestiges: 0 };
+  const newPrestige = {
+    luckPoints: prevPrestige.luckPoints.plus(gain),
+    luckTier: prevPrestige.luckTier,
+    totalPrestiges: prevPrestige.totalPrestiges + (gain.gt(0) ? 1 : 0),
+  };
+
+  return {
+    ...defaultState,
+    // carry over settings
+    settings: state.settings,
+    // carry accumulated prestige
+    prestige: newPrestige,
+    lastSaveTimestamp: Date.now(),
   };
 }
 
