@@ -6,7 +6,7 @@ export type ComboKind =
   | 'sixKind'
   | 'flush';
 
-export type ComboIntensity = 'low' | 'medium' | 'high';
+export type ComboIntensity = 'low' | 'medium' | 'high' | 'legendary';
 
 export interface ComboResult {
   kind: ComboKind;

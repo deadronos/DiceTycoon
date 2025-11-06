@@ -1,10 +1,20 @@
 import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameState } from '../types/game';
-import { GAME_CONSTANTS, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
+import {
+  GAME_CONSTANTS,
+  PRESTIGE_SHOP_ITEMS,
+  type PrestigeShopKey,
+} from './constants';
 import { detectCombo, getComboMultiplier } from './combos';
 import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
 import { createDefaultGameState } from './storage';
+
+const DecimalMath = Decimal as unknown as {
+  log10(value: DecimalType): DecimalType;
+  max(a: DecimalType, b: DecimalType): DecimalType;
+  min(a: DecimalType, b: DecimalType): DecimalType;
+};
 
 /**
  * Calculate the cost to unlock a specific die
@@ -55,6 +65,12 @@ export function getAutorollCooldown(level: number): DecimalType {
   return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
     GAME_CONSTANTS.AUTOROLL_COOLDOWN_REDUCTION.pow(level)
   );
+}
+
+export function getLuckGainMultiplier(state: GameState): DecimalType {
+  const level = state.prestige?.shop?.luckFabricator ?? 0;
+  if (level <= 0) return new Decimal(1);
+  return new Decimal(1).plus(new Decimal(0.1).times(level));
 }
 
 /**
@@ -111,7 +127,7 @@ export function getLuckMultiplier(state: GameState): DecimalType {
   try {
     const mult = new Decimal(1).plus(points.times(0.02));
     // cap at 10
-    return Decimal.min(mult, new Decimal(10));
+    return DecimalMath.min(mult, new Decimal(10));
   } catch (err) {
     return new Decimal(1);
   }
@@ -127,10 +143,12 @@ export function calculateLuckGain(state: GameState): DecimalType {
     // guard: if credits <= 0, return 0
     if (credits.lte(0)) return new Decimal(0);
 
-    const log10 = Decimal.log10(credits);
-    const base = Decimal.max(log10.minus(3), new Decimal(0));
-    const gain = base.times(0.25).floor();
-    return gain.max(0);
+    const log10 = DecimalMath.log10(credits);
+    const base = DecimalMath.max(log10.minus(3), new Decimal(0));
+    const luckBoost = getLuckGainMultiplier(state);
+    const rawGain = base.times(0.25).times(luckBoost);
+    const flooredGain = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
+    return DecimalMath.max(flooredGain, new Decimal(0));
   } catch (err) {
     return new Decimal(0);
   }
@@ -235,7 +253,9 @@ export function upgradeAutoroll(state: GameState): GameState | null {
   if (state.credits.lt(cost)) return null;
   
   const newLevel = state.autoroll.level + 1;
-  const newCooldown = getAutorollCooldown(newLevel);
+  const newCooldown = getAutorollCooldown(newLevel).times(
+    getAutorollCooldownMultiplier(state)
+  );
   
   return {
     ...state,
@@ -377,7 +397,7 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
   
   const cost = getPrestigeUpgradeCost(key, currentLevel);
   if (state.prestige.luckPoints.lt(cost)) return null;
-  
+
   // Consumable items (reroll tokens) don't increment level, add tokens instead
   if (key === 'rerollTokens') {
     return {
@@ -392,8 +412,30 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
       },
     };
   }
-  
+
   // Regular shop items: increment level
+  const newShopLevel = currentLevel + 1;
+  let autorollState = state.autoroll;
+
+  if (key === 'autorollCooldown' && state.autoroll.level > 0) {
+    const effectiveCooldown = getAutorollCooldown(state.autoroll.level).times(
+      getAutorollCooldownMultiplier({
+        ...state,
+        prestige: {
+          ...state.prestige,
+          shop: {
+            ...state.prestige.shop,
+            [key]: newShopLevel,
+          },
+        },
+      })
+    );
+    autorollState = {
+      ...state.autoroll,
+      cooldown: effectiveCooldown,
+    };
+  }
+
   return {
     ...state,
     prestige: {
@@ -401,9 +443,10 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
       luckPoints: state.prestige.luckPoints.minus(cost),
       shop: {
         ...state.prestige.shop,
-        [key]: currentLevel + 1,
+        [key]: newShopLevel,
       },
     },
+    autoroll: autorollState,
   };
 }
 

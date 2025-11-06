@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import Decimal from '@patashu/break_eternity.js';
+import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { ComboResult, ComboKind, ComboIntensity } from '../types/combo';
 
 const COMBO_PRIORITY: Array<{ threshold: number; kind: ComboKind }> = [
@@ -24,8 +24,8 @@ const COMBO_INTENSITY: Record<ComboKind, ComboIntensity> = {
   triple: 'medium',
   fourKind: 'medium',
   fiveKind: 'high',
-  sixKind: 'high',
-  flush: 'high',
+  sixKind: 'legendary',
+  flush: 'legendary',
 };
 
 const COMBO_EMOJIS: Record<ComboKind, string> = {
@@ -49,7 +49,7 @@ const COMBO_BONUS_MULTIPLIER: Record<ComboKind, number> = {
   flush: 2.0,
 };
 
-export function getComboMultiplier(combo: ComboResult): Decimal {
+export function getComboMultiplier(combo: ComboResult): DecimalType {
   if (!combo) return new Decimal(1);
   const value = COMBO_BONUS_MULTIPLIER[combo.kind] ?? 1;
   return new Decimal(value);
@@ -123,36 +123,50 @@ export interface ComboMetadata {
   message: string;
   intensity: ComboIntensity;
   emoji: string;
+  multiplier: number;
+  bonusPercent: number;
+  rarityLabel: string;
 }
+
+const INTENSITY_LABEL: Record<ComboIntensity, string> = {
+  low: 'Common',
+  medium: 'Rare',
+  high: 'Epic',
+  legendary: 'Legendary',
+};
 
 export function getComboMetadata(combo: ComboResult): ComboMetadata {
   const label = COMBO_LABELS[combo.kind];
   const emoji = COMBO_EMOJIS[combo.kind];
   const intensity = COMBO_INTENSITY[combo.kind];
+  const multiplier = getComboMultiplier(combo).toNumber();
+  const percent = Math.round((multiplier - 1) * 100);
+  const rarityLabel = INTENSITY_LABEL[intensity];
 
   if (combo.kind === 'flush' && combo.faces) {
     const sequence = combo.faces.join(' · ');
     // include bonus multiplier info
-    const multiplier = getComboMultiplier(combo);
-    const percent = Math.round((multiplier.toNumber() - 1) * 100);
     return {
       title: `${emoji} ${label}!`,
       message: `Perfect sequence rolled: ${sequence} (+${percent}% credits)` ,
       intensity,
       emoji,
+      multiplier,
+      bonusPercent: percent,
+      rarityLabel,
     };
   }
 
   const faceWord = combo.face ? `${combo.face}s` : 'dice';
   const countWord = numberWord(combo.count);
 
-  const multiplier = getComboMultiplier(combo);
-  const percent = Math.round((multiplier.toNumber() - 1) * 100);
-
   return {
     title: `${emoji} ${label}!`,
     message: `You rolled ${countWord} ${faceWord}! (+${percent}% credits)`,
     intensity,
     emoji,
+    multiplier,
+    bonusPercent: percent,
+    rarityLabel,
   };
 }
