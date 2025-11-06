@@ -9,6 +9,7 @@ import {
   getLuckGainMultiplier,
   getShopMultiplier,
   getAutorollCooldownMultiplier,
+  getLuckProgress,
 } from '../utils/game-logic';
 
 interface Props {
@@ -56,11 +57,19 @@ export const PrestigePanel: React.FC<Props> = ({
   shopItems,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'shop' | 'consumables'>('overview');
+  const [shopFilter, setShopFilter] = useState<'all' | 'affordable' | 'recommended'>('all');
 
   const luckMultiplier = useMemo(() => getLuckMultiplier(gameState), [gameState]);
   const luckGainBoost = useMemo(() => getLuckGainMultiplier(gameState), [gameState]);
   const shopMultiplier = useMemo(() => getShopMultiplier(gameState), [gameState]);
   const autorollBoost = useMemo(() => getAutorollCooldownMultiplier(gameState), [gameState]);
+  const luckProgress = useMemo(() => getLuckProgress(gameState), [gameState]);
+  const luckProgressPercent = Math.round(Math.min(100, luckProgress.progressPercent));
+  const projectedLuck = currentLuck.plus(luckGain);
+  const recommendedSet = useMemo(
+    () => new Set<PrestigeShopKey>(['multiplier', 'luckFabricator', 'autorollCooldown']),
+    []
+  );
 
   const shopKeys = useMemo(
     () =>
@@ -68,6 +77,20 @@ export const PrestigePanel: React.FC<Props> = ({
         key => shopItems[key].category !== 'consumable'
       ),
     [shopItems]
+  );
+
+  const filteredShopKeys = useMemo(
+    () =>
+      shopKeys.filter(key => {
+        if (shopFilter === 'affordable') {
+          return canBuyUpgrade(gameState, key);
+        }
+        if (shopFilter === 'recommended') {
+          return recommendedSet.has(key);
+        }
+        return true;
+      }),
+    [shopKeys, shopFilter, canBuyUpgrade, gameState, recommendedSet]
   );
 
   const consumableKeys = useMemo(
@@ -82,10 +105,10 @@ export const PrestigePanel: React.FC<Props> = ({
     return categoryOrder
       .map(category => ({
         category,
-        items: shopKeys.filter(key => shopItems[key].category === category),
+        items: filteredShopKeys.filter(key => shopItems[key].category === category),
       }))
       .filter(group => group.items.length > 0);
-  }, [shopKeys, shopItems]);
+  }, [filteredShopKeys, shopItems]);
 
   if (!visible) return null;
 
@@ -221,10 +244,40 @@ export const PrestigePanel: React.FC<Props> = ({
               </div>
             </div>
 
+            <div className="luck-progress">
+              <div className="luck-progress__header">
+                <span>Progress to next Luck Point</span>
+                <span>{luckProgressPercent}%</span>
+              </div>
+              <div className="luck-progress__track" aria-hidden="true">
+                <div
+                  className="luck-progress__fill"
+                  style={{ width: `${Math.min(100, luckProgress.progressPercent)}%` }}
+                />
+              </div>
+              <div className="luck-progress__hint">
+                Keep pushing your credits higher to secure the next Luck Point.
+              </div>
+            </div>
+
             <div className="prestige-actions">
-              <button className="btn btn-primary" onClick={onConfirm}>
-                Confirm Prestige
-              </button>
+              <div className="prestige-confirm-wrapper">
+                <button className="btn btn-primary" onClick={onConfirm}>
+                  Confirm Prestige
+                </button>
+                <div className="prestige-confirm-preview">
+                  <div className="prestige-confirm-preview__row">
+                    <span>Luck Bank</span>
+                    <span>{formatShort(currentLuck)} LP</span>
+                  </div>
+                  <div className="prestige-confirm-preview__arrow" aria-hidden="true">→</div>
+                  <div className="prestige-confirm-preview__row">
+                    <span>After Prestige</span>
+                    <span>{formatShort(projectedLuck)} LP</span>
+                  </div>
+                  <div className="prestige-confirm-preview__gain">Gain: +{formatShort(luckGain)} LP</div>
+                </div>
+              </div>
               <button className="btn btn-secondary" onClick={onClose}>
                 Cancel
               </button>
@@ -235,6 +288,18 @@ export const PrestigePanel: React.FC<Props> = ({
 
         {activeTab === 'shop' && (
           <div className="prestige-shop">
+            <div className="prestige-shop__filters">
+              <label htmlFor="prestige-shop-filter">Filter</label>
+              <select
+                id="prestige-shop-filter"
+                value={shopFilter}
+                onChange={event => setShopFilter(event.target.value as 'all' | 'affordable' | 'recommended')}
+              >
+                <option value="all">All Upgrades</option>
+                <option value="affordable">Affordable Now</option>
+                <option value="recommended">Recommended Picks</option>
+              </select>
+            </div>
             {groupedShop.map(group => (
               <div className="prestige-category" key={group.category}>
                 <div className="prestige-category__header">
@@ -251,16 +316,33 @@ export const PrestigePanel: React.FC<Props> = ({
                     const canBuy = canBuyUpgrade(gameState, key);
                     const isMaxed = item.maxLevel > 0 && currentLevel >= item.maxLevel;
                     const progress = item.maxLevel > 0 ? Math.min(100, (currentLevel / item.maxLevel) * 100) : 0;
+                    const isRecommended = recommendedSet.has(key);
+                    const isNew = currentLevel === 0;
+                    const itemClassNames = [
+                      'prestige-item',
+                      canBuy && !isMaxed ? 'prestige-item--affordable' : '',
+                      isRecommended ? 'prestige-item--recommended' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ');
 
                     return (
                       <div
                         key={key}
-                        className={`prestige-item ${canBuy && !isMaxed ? 'prestige-item--affordable' : ''}`}
+                        className={itemClassNames}
                       >
                         <div className="prestige-item__header">
                           <span className="prestige-item__icon" aria-hidden="true">{item.icon}</span>
-                          <div>
-                            <div className="prestige-item__title">{item.name}</div>
+                          <div className="prestige-item__text">
+                            <div className="prestige-item__title-row">
+                              <div className="prestige-item__title">{item.name}</div>
+                              <div className="prestige-item__badges">
+                                {isNew && <span className="prestige-item__badge prestige-item__badge--new">NEW</span>}
+                                {isRecommended && (
+                                  <span className="prestige-item__badge prestige-item__badge--recommended">Recommended</span>
+                                )}
+                              </div>
+                            </div>
                             <div className="prestige-item__description">{item.description}</div>
                           </div>
                           <InfoTooltip content={item.formula} label={`${item.name} formula`} />
@@ -318,26 +400,32 @@ export const PrestigePanel: React.FC<Props> = ({
               </div>
               <div className="prestige-shop-grid">
                 {consumableKeys.map(key => {
-                  const item = shopItems[key];
-                  const currentCount = key === 'rerollTokens'
-                    ? gameState.prestige?.consumables?.rerollTokens ?? 0
-                    : 0;
-                  const cost = getUpgradeCost(key, 0);
-                  const canBuy = canBuyUpgrade(gameState, key);
+                    const item = shopItems[key];
+                    const currentCount = key === 'rerollTokens'
+                      ? gameState.prestige?.consumables?.rerollTokens ?? 0
+                      : 0;
+                    const cost = getUpgradeCost(key, 0);
+                    const canBuy = canBuyUpgrade(gameState, key);
+                    const isNew = currentCount === 0;
 
-                  return (
-                    <div
-                      key={key}
-                      className={`prestige-item prestige-item--consumable ${canBuy ? 'prestige-item--affordable' : ''}`}
-                    >
-                      <div className="prestige-item__header">
-                        <span className="prestige-item__icon" aria-hidden="true">{item.icon}</span>
-                        <div>
-                          <div className="prestige-item__title">{item.name}</div>
-                          <div className="prestige-item__description">{item.description}</div>
+                    return (
+                      <div
+                        key={key}
+                        className={`prestige-item prestige-item--consumable ${canBuy ? 'prestige-item--affordable' : ''}`}
+                      >
+                        <div className="prestige-item__header">
+                          <span className="prestige-item__icon" aria-hidden="true">{item.icon}</span>
+                          <div className="prestige-item__text">
+                            <div className="prestige-item__title-row">
+                              <div className="prestige-item__title">{item.name}</div>
+                              <div className="prestige-item__badges">
+                                {isNew && <span className="prestige-item__badge prestige-item__badge--new">NEW</span>}
+                              </div>
+                            </div>
+                            <div className="prestige-item__description">{item.description}</div>
+                          </div>
+                          <InfoTooltip content={item.formula} label={`${item.name} formula`} />
                         </div>
-                        <InfoTooltip content={item.formula} label={`${item.name} formula`} />
-                      </div>
 
                       <div className="prestige-item__body">
                         <div className="prestige-item__effect">Owned: {currentCount}</div>

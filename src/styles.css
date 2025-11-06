@@ -492,6 +492,13 @@ body {
   text-align: center;
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .stat-item {
   margin: 10px 0;
 }
@@ -507,6 +514,409 @@ body {
   color: var(--color-text);
 }
 
+.btn-glow {
+  box-shadow: 0 0 15px rgba(0, 184, 148, 0.5);
+  animation: glow 1.6s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 184, 148, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(0, 184, 148, 0.75);
+  }
+}
+
+.die-card--upgrade-ready::before,
+.die-card--animation-ready::before {
+  opacity: 1;
+}
+
+.die-card--upgrade-ready {
+  border: 1px solid rgba(0, 184, 148, 0.5);
+}
+
+.die-card--animation-ready {
+  border: 1px solid rgba(255, 206, 86, 0.45);
+}
+
+.die-card--maxed {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.die-action {
+  position: relative;
+}
+
+.die-action__preview {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 108%;
+  background: rgba(13, 20, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.75rem;
+  text-align: left;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 5;
+}
+
+.die-action--previewable:hover .die-action__preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.die-max-label {
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+.combo-history {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.combo-history__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.combo-history__summary {
+  display: flex;
+  gap: 16px;
+}
+
+.combo-history__label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.combo-history__value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.combo-history__hint {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+}
+
+.combo-history__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.combo-history__entry {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(13, 20, 32, 0.6);
+}
+
+.combo-history__entry-title {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.combo-history__chain {
+  font-size: 0.85rem;
+  color: var(--color-accent);
+}
+
+.combo-history__entry-body {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+}
+
+.combo-history__entry-footer {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+}
+
+.combo-history__empty {
+  text-align: center;
+  color: var(--color-text-dim);
+  font-size: 0.85rem;
+}
+
+.achievements-panel {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.achievements-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.achievements-panel__count {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+}
+
+.achievements-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(13, 20, 32, 0.5);
+}
+
+.achievement--unlocked {
+  border-color: rgba(0, 184, 148, 0.4);
+}
+
+.achievement--new {
+  box-shadow: 0 0 18px rgba(255, 206, 86, 0.3);
+}
+
+.achievement__status {
+  font-size: 1.4rem;
+}
+
+.achievement__name {
+  font-weight: 600;
+}
+
+.achievement__description {
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.achievement__badge {
+  margin-left: auto;
+  background: rgba(255, 206, 86, 0.2);
+  color: var(--color-accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+.autoroll-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.autoroll-metric {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.autoroll-metric__label {
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+  display: block;
+}
+
+.autoroll-metric__value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.autoroll-progress {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.autoroll-progress__bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.autoroll-progress--active .autoroll-progress__bar {
+  animation: autoroll-progress-cycle linear infinite;
+}
+
+@keyframes autoroll-progress-cycle {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.autoroll-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.prestige-shop__filters {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.prestige-shop__filters select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--color-text);
+}
+
+.prestige-item__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prestige-item__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.prestige-item__badges {
+  display: flex;
+  gap: 6px;
+}
+
+.prestige-item__badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.prestige-item__badge--new {
+  background: rgba(255, 206, 86, 0.2);
+  color: var(--color-accent);
+}
+
+.prestige-item__badge--recommended {
+  background: rgba(0, 184, 148, 0.2);
+  color: var(--color-secondary);
+}
+
+.prestige-item--recommended {
+  border: 1px solid rgba(0, 184, 148, 0.35);
+}
+
+.prestige-confirm-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.prestige-confirm-preview {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: rgba(13, 20, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  width: 220px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  font-size: 0.85rem;
+}
+
+.prestige-confirm-wrapper:hover .prestige-confirm-preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.prestige-confirm-preview__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.prestige-confirm-preview__arrow {
+  text-align: center;
+  margin: 4px 0;
+  opacity: 0.6;
+}
+
+.prestige-confirm-preview__gain {
+  margin-top: 6px;
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.luck-progress {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.luck-progress__header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.luck-progress__track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.luck-progress__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+}
+
+.luck-progress__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
 /* Settings */
 .settings-section {
   padding: 15px;
@@ -625,10 +1035,19 @@ body {
 }
 
 /* Combo Toast */
-.combo-toast {
+.combo-toast-stack {
   position: fixed;
   top: 24px;
   right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  z-index: 1300;
+}
+
+.combo-toast {
+  position: relative;
   min-width: 260px;
   background: rgba(15, 23, 36, 0.92);
   border-radius: 16px;
@@ -642,7 +1061,6 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: transform 0.3s ease, opacity 0.3s ease;
-  z-index: 1300;
 }
 
 .combo-toast.show {

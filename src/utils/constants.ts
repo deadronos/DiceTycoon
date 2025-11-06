@@ -42,6 +42,7 @@ export const GAME_CONSTANTS: GameConstants = {
   // Animations
   ANIMATION_UNLOCK_COST: new Decimal(25),
   MAX_ANIMATION_LEVEL: 3,
+  MAX_DIE_LEVEL: 100,
 };
 
 export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
