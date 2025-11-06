@@ -247,7 +247,7 @@ export function getLuckMultiplier(state: GameState): DecimalType {
 
 /**
  * Calculate how many luck points the player would gain on a prestige reset.
- * Formula (MVP): floor( max(log10(totalCredits) - 3, 0) * 0.25 )
+ * Formula (MVP): floor( max(log10(totalCredits) - 2, 0) * 0.25 )
  */
 export function calculateLuckGain(state: GameState): DecimalType {
   try {
@@ -256,9 +256,9 @@ export function calculateLuckGain(state: GameState): DecimalType {
     if (credits.lte(0)) return new Decimal(0);
 
     const log10 = DecimalMath.log10(credits);
-    const base = DecimalMath.max(log10.minus(3), new Decimal(0));
+    const base = DecimalMath.max(log10.minus(2), new Decimal(0));
     const luckBoost = getLuckGainMultiplier(state);
-    const rawGain = base.times(0.25).times(luckBoost);
+    const rawGain = base.times(0.6).times(luckBoost);
     const flooredGain = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
     return DecimalMath.max(flooredGain, new Decimal(0));
   } catch (err) {
@@ -274,7 +274,7 @@ export function getLuckProgress(state: GameState): { progressPercent: number; ra
     }
 
     const log10 = DecimalMath.log10(credits);
-    const base = DecimalMath.max(log10.minus(3), new Decimal(0));
+    const base = DecimalMath.max(log10.minus(2), new Decimal(0));
     const luckBoost = getLuckGainMultiplier(state);
     const rawGain = base.times(0.25).times(luckBoost);
     const floored = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
@@ -732,4 +732,3 @@ export function applyPrestigeMultipliers(baseCredits: DecimalType, state: GameSt
   const shopMult = getShopMultiplier(state);
   return baseCredits.times(luckMult).times(shopMult);
 }
-

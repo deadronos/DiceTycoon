@@ -28,7 +28,7 @@ This report examines the core balance formulas, thresholds, and progression curv
 
   getLuckMultiplier(state): returns min(1 + luckPoints × 0.02, 10)
 
-  calculateLuckGain(state): floor( max(log10(totalCredits) - 3, 0) × 0.25 × luckBoost )
+  calculateLuckGain(state): floor( max(log10(totalCredits) - 2, 0) × 0.25 × luckBoost )
 
   luckBoost (Luck Fabricator shop) = 1 + 0.1 × level
 
@@ -99,10 +99,10 @@ All numeric values use Decimal in code; here are representative numbers using cu
 
 5) Prestige luck thresholds (current implementation)
 
-   calculateLuckGain uses floor( (log10(totalCredits) - 3) × 0.25 × luckBoost ), floored.
+   calculateLuckGain uses floor( (log10(totalCredits) - 2) × 0.25 × luckBoost ), floored.
 
-   - Need log10(totalCredits) - 3 >= 4 to produce rawGain >= 1 (assuming luckBoost = 1), so log10 >= 7 ⇒ credits >= 10^7 to get 1 luck point.
-   - To get 2 luck points: base >= 8 ⇒ credits >= 10^11.
+   - Need log10(totalCredits) - 2 >= 4 to produce rawGain >= 1 (assuming luckBoost = 1), so log10 >= 6 ⇒ credits >= 10^6 to get 1 luck point.
+   - To get 2 luck points: base >= 8 ⇒ credits >= 10^10.
 
    Observation: luck points are extremely sparse; first luck point requires ~10 million credits under default parameters.
 
