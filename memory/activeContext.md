@@ -23,6 +23,15 @@
 - Continue adding design and task artifacts as features are implemented; link tasks to designs where applicable.
 - Periodically review Memory Bank files for accuracy after significant merges or refactors.
 
+## Verification (2025-11-06)
+
+- Performed a source inspection of `src/` to ensure Memory Bank references match the codebase. Verified these canonical files and patterns exist:
+  - `src/App.tsx` as the application root that wires state, autoroll, and autosave.
+  - `src/utils/decimal.ts` (Decimal helpers and `rollDie()`), `src/utils/storage.ts` (serialize/deserialize, `safeSave`/`safeLoad`), and `src/utils/constants.ts` (STORAGE_KEY and timings).
+  - `src/utils/game-logic.ts` is used for pure game operations and cost calculations.
+
+This inspection informed updates to `memory/systemPatterns.md` and `memory/techContext.md` to keep them aligned with the implementation.
+
 ## Decisions & Open Questions
 
 - Decision: Use H1 for top-level memory file headings to satisfy repository linter rules.
