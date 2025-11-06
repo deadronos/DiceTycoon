@@ -1,5 +1,12 @@
 import Decimal from '@patashu/break_eternity.js';
-import { GameState, SerializedGameState, DieState } from '../types/game';
+import {
+  type GameState,
+  type SerializedGameState,
+  type DieState,
+  type GameStats,
+  type SerializedGameStats,
+  type AchievementState,
+} from '../types/game';
 import { STORAGE_KEY, STORAGE_VERSION, GAME_CONSTANTS } from './constants';
 import { fromDecimalString } from './decimal';
 
@@ -27,6 +34,8 @@ export function serializeGameState(state: GameState): SerializedGameState {
     settings: state.settings,
     totalRolls: state.totalRolls,
     lastSaveTimestamp: state.lastSaveTimestamp,
+    stats: serializeStats(state.stats),
+    achievements: state.achievements,
     prestige: state.prestige
       ? {
           luckPoints: state.prestige.luckPoints.toString(),
@@ -43,6 +52,7 @@ export function serializeGameState(state: GameState): SerializedGameState {
  * Deserialize a saved game state
  */
 export function deserializeGameState(data: SerializedGameState): GameState {
+  const stats = data.stats ? deserializeStats(data.stats) : createDefaultStats();
   return {
     credits: fromDecimalString(data.credits, new Decimal(0)),
     dice: data.dice.map(die => ({
@@ -62,6 +72,8 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     settings: data.settings,
     totalRolls: data.totalRolls,
     lastSaveTimestamp: data.lastSaveTimestamp,
+    stats,
+    achievements: normalizeAchievements(data.achievements),
     prestige: data.prestige
       ? {
           luckPoints: fromDecimalString(data.prestige.luckPoints, new Decimal(0)),
@@ -156,6 +168,87 @@ export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): u
   }
 }
 
+function serializeStats(stats: GameStats): SerializedGameStats {
+  return {
+    bestRoll: stats.bestRoll.toString(),
+    bestRollFaces: stats.bestRollFaces,
+    totalCreditsEarned: stats.totalCreditsEarned.toString(),
+    recentRolls: stats.recentRolls,
+    lastRollCredits: stats.lastRollCredits.toString(),
+    comboChain: {
+      current: stats.comboChain.current,
+      best: stats.comboChain.best,
+      lastComboRoll: stats.comboChain.lastComboRoll,
+      history: stats.comboChain.history.slice(0, 5),
+    },
+    autoroll: {
+      startedAt: stats.autoroll.startedAt,
+      creditsEarned: stats.autoroll.creditsEarned.toString(),
+      rolls: stats.autoroll.rolls,
+    },
+  };
+}
+
+function deserializeStats(data: SerializedGameStats): GameStats {
+  return {
+    bestRoll: fromDecimalString(data.bestRoll, new Decimal(0)),
+    bestRollFaces: data.bestRollFaces ?? [],
+    totalCreditsEarned: fromDecimalString(data.totalCreditsEarned, new Decimal(0)),
+    recentRolls: Array.isArray(data.recentRolls) ? data.recentRolls.slice(0, 25) : [],
+    lastRollCredits: fromDecimalString(data.lastRollCredits, new Decimal(0)),
+    comboChain: {
+      current: data.comboChain?.current ?? 0,
+      best: data.comboChain?.best ?? 0,
+      lastComboRoll: data.comboChain?.lastComboRoll ?? null,
+      history: data.comboChain?.history ? data.comboChain.history.slice(0, 5) : [],
+    },
+    autoroll: {
+      startedAt: data.autoroll?.startedAt ?? null,
+      creditsEarned: fromDecimalString(data.autoroll?.creditsEarned, new Decimal(0)),
+      rolls: data.autoroll?.rolls ?? 0,
+    },
+  };
+}
+
+function normalizeAchievements(data?: AchievementState): AchievementState {
+  if (!data) {
+    return createDefaultAchievements();
+  }
+
+  return {
+    unlocked: Array.from(new Set(data.unlocked ?? [])),
+    newlyUnlocked: [],
+  };
+}
+
+export function createDefaultStats(): GameStats {
+  return {
+    bestRoll: new Decimal(0),
+    bestRollFaces: [],
+    totalCreditsEarned: new Decimal(0),
+    recentRolls: [],
+    lastRollCredits: new Decimal(0),
+    comboChain: {
+      current: 0,
+      best: 0,
+      lastComboRoll: null,
+      history: [],
+    },
+    autoroll: {
+      startedAt: null,
+      creditsEarned: new Decimal(0),
+      rolls: 0,
+    },
+  };
+}
+
+export function createDefaultAchievements(): AchievementState {
+  return {
+    unlocked: [],
+    newlyUnlocked: [],
+  };
+}
+
 /**
  * Create a default initial game state
  */
@@ -189,6 +282,8 @@ export function createDefaultGameState(): GameState {
     },
     totalRolls: 0,
     lastSaveTimestamp: Date.now(),
+    stats: createDefaultStats(),
+    achievements: createDefaultAchievements(),
     prestige: {
       luckPoints: new Decimal(0),
       luckTier: 0,

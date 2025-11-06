@@ -1,5 +1,5 @@
 import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
-import { GameState } from '../types/game';
+import type { ComboChainStats, GameState, GameStats } from '../types/game';
 import {
   GAME_CONSTANTS,
   PRESTIGE_SHOP_ITEMS,
@@ -8,13 +8,138 @@ import {
 import { detectCombo, getComboMultiplier } from './combos';
 import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
-import { createDefaultGameState } from './storage';
+import { createDefaultGameState, createDefaultStats } from './storage';
+import { evaluateAchievements } from './achievements';
 
 const DecimalMath = Decimal as unknown as {
   log10(value: DecimalType): DecimalType;
   max(a: DecimalType, b: DecimalType): DecimalType;
   min(a: DecimalType, b: DecimalType): DecimalType;
 };
+
+const CHAIN_BONUS_STEP = new Decimal(0.1);
+
+const ensureStats = (stats?: GameStats): GameStats => stats ?? createDefaultStats();
+
+function prepareComboChain(state: GameState, combo: ComboResult | null): {
+  multiplier: DecimalType;
+  chain: ComboChainStats;
+} {
+  const stats = ensureStats(state.stats);
+  const previous = stats.comboChain;
+
+  if (!combo) {
+    return {
+      multiplier: new Decimal(1),
+      chain: {
+        current: 0,
+        best: previous.best,
+        lastComboRoll: null,
+        history: previous.history,
+      },
+    };
+  }
+
+  const isConsecutive = previous.lastComboRoll === state.totalRolls;
+  const currentChain = isConsecutive ? previous.current + 1 : 1;
+  const bestChain = Math.max(previous.best, currentChain);
+  const chainBonus = new Decimal(1).plus(CHAIN_BONUS_STEP.times(Math.max(currentChain - 1, 0)));
+  const historyEntry = {
+    timestamp: Date.now(),
+    combo,
+    chain: currentChain,
+  };
+
+  return {
+    multiplier: chainBonus,
+    chain: {
+      current: currentChain,
+      best: bestChain,
+      lastComboRoll: state.totalRolls + 1,
+      history: [historyEntry, ...previous.history].slice(0, 5),
+    },
+  };
+}
+
+function updateStatsAfterRoll(
+  state: GameState,
+  finalCredits: DecimalType,
+  combo: ComboResult | null,
+  rolledFaces: number[],
+  comboChain: ComboChainStats
+): GameStats {
+  const stats = ensureStats(state.stats);
+  const isNewBest = finalCredits.gt(stats.bestRoll);
+  const bestRoll = isNewBest ? finalCredits : stats.bestRoll;
+  const bestRollFaces = isNewBest ? rolledFaces : stats.bestRollFaces;
+  const totalCreditsEarned = stats.totalCreditsEarned.plus(finalCredits);
+  const recentRolls = [finalCredits.toString(), ...stats.recentRolls].slice(0, 25);
+  const autorollStats = state.autoroll.enabled && state.autoroll.level > 0
+    ? {
+        startedAt: stats.autoroll.startedAt ?? Date.now(),
+        creditsEarned: stats.autoroll.creditsEarned.plus(finalCredits),
+        rolls: stats.autoroll.rolls + 1,
+      }
+    : {
+        ...stats.autoroll,
+        startedAt: state.autoroll.enabled ? stats.autoroll.startedAt : null,
+      };
+
+  return {
+    bestRoll,
+    bestRollFaces,
+    totalCreditsEarned,
+    recentRolls,
+    lastRollCredits: finalCredits,
+    comboChain,
+    autoroll: autorollStats,
+  };
+}
+
+function applyRollOutcome(
+  state: GameState,
+  params: {
+    rolledFaces: number[];
+    baseCredits: DecimalType;
+    combo: ComboResult | null;
+    updatedDice?: GameState['dice'];
+  }
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+  const { rolledFaces, baseCredits, combo, updatedDice } = params;
+  const { multiplier: chainMultiplier, chain } = prepareComboChain(state, combo);
+  let finalCredits = baseCredits;
+  if (combo) {
+    finalCredits = finalCredits.times(getComboMultiplier(combo));
+  }
+  finalCredits = finalCredits.times(chainMultiplier);
+  finalCredits = applyPrestigeMultipliers(finalCredits, state);
+
+  const updatedStats = updateStatsAfterRoll(state, finalCredits, combo, rolledFaces, chain);
+  const baseState: GameState = {
+    ...state,
+    credits: state.credits.plus(finalCredits),
+    totalRolls: state.totalRolls + 1,
+    dice: updatedDice ?? state.dice,
+    stats: updatedStats,
+  };
+
+  const achievementContextState: GameState = { ...baseState, achievements: state.achievements };
+  const achievements = evaluateAchievements(state.achievements, {
+    state: achievementContextState,
+    stats: updatedStats,
+    finalCredits,
+    combo,
+  });
+
+  return {
+    newState: {
+      ...baseState,
+      achievements,
+    },
+    creditsEarned: finalCredits,
+    combo,
+  };
+}
 
 /**
  * Calculate the cost to unlock a specific die
@@ -96,25 +221,12 @@ export function performRoll(
     };
   });
   const combo = detectCombo(rolledFaces);
-  let finalCredits = totalCredits;
-  if (combo) {
-    const multiplier = getComboMultiplier(combo);
-    finalCredits = totalCredits.times(multiplier);
-  }
-
-  // Apply prestige multipliers (luck + shop)
-  finalCredits = applyPrestigeMultipliers(finalCredits, state);
-
-  return {
-    newState: {
-      ...state,
-      credits: state.credits.plus(finalCredits),
-      dice: newDice,
-      totalRolls: state.totalRolls + 1,
-    },
-    creditsEarned: finalCredits,
+  return applyRollOutcome(state, {
+    rolledFaces,
+    baseCredits: totalCredits,
     combo,
-  };
+    updatedDice: newDice,
+  });
 }
 
 /**
@@ -154,6 +266,31 @@ export function calculateLuckGain(state: GameState): DecimalType {
   }
 }
 
+export function getLuckProgress(state: GameState): { progressPercent: number; rawGain: DecimalType; fractional: DecimalType } {
+  try {
+    const credits = state.credits || new Decimal(0);
+    if (credits.lte(0)) {
+      return { progressPercent: 0, rawGain: new Decimal(0), fractional: new Decimal(0) };
+    }
+
+    const log10 = DecimalMath.log10(credits);
+    const base = DecimalMath.max(log10.minus(3), new Decimal(0));
+    const luckBoost = getLuckGainMultiplier(state);
+    const rawGain = base.times(0.25).times(luckBoost);
+    const floored = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
+    const fractional = rawGain.minus(floored);
+    const percent = Math.max(0, Math.min(1, fractional.toNumber())) * 100;
+
+    return {
+      progressPercent: percent,
+      rawGain,
+      fractional,
+    };
+  } catch (err) {
+    return { progressPercent: 0, rawGain: new Decimal(0), fractional: new Decimal(0) };
+  }
+}
+
 /**
  * Prepare preview information for prestige UI
  */
@@ -175,6 +312,18 @@ export function performPrestigeReset(state: GameState): GameState {
 
   // Build new base state (soft reset: keep prestige accumulative)
   const defaultState = createDefaultGameState();
+  const previousStats = ensureStats(state.stats);
+  const baseStats = createDefaultStats();
+  const resetStats = {
+    ...baseStats,
+    bestRoll: previousStats.bestRoll,
+    bestRollFaces: previousStats.bestRollFaces,
+    totalCreditsEarned: previousStats.totalCreditsEarned,
+    comboChain: {
+      ...baseStats.comboChain,
+      best: previousStats.comboChain.best,
+    },
+  };
 
   // merge prestige
   const prevPrestige = state.prestige ?? { luckPoints: new Decimal(0), luckTier: 0, totalPrestiges: 0, shop: {}, consumables: { rerollTokens: 0 } };
@@ -192,6 +341,8 @@ export function performPrestigeReset(state: GameState): GameState {
     settings: state.settings,
     // carry accumulated prestige
     prestige: newPrestige,
+    stats: resetStats,
+    achievements: state.achievements,
     lastSaveTimestamp: Date.now(),
   };
 }
@@ -223,7 +374,8 @@ export function unlockDie(state: GameState, dieId: number): GameState | null {
 export function levelUpDie(state: GameState, dieId: number): GameState | null {
   const die = state.dice.find(d => d.id === dieId);
   if (!die || !die.unlocked) return null;
-  
+  if (die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL) return null;
+
   const cost = getLevelUpCost(die.level);
   if (state.credits.lt(cost)) return null;
   
@@ -251,12 +403,21 @@ export function levelUpDie(state: GameState, dieId: number): GameState | null {
 export function upgradeAutoroll(state: GameState): GameState | null {
   const cost = getAutorollUpgradeCost(state.autoroll.level);
   if (state.credits.lt(cost)) return null;
-  
+
   const newLevel = state.autoroll.level + 1;
   const newCooldown = getAutorollCooldown(newLevel).times(
     getAutorollCooldownMultiplier(state)
   );
-  
+
+  const stats = ensureStats(state.stats);
+  const autorollStats = newLevel === 1
+    ? {
+        startedAt: Date.now(),
+        creditsEarned: new Decimal(0),
+        rolls: 0,
+      }
+    : stats.autoroll;
+
   return {
     ...state,
     credits: state.credits.minus(cost),
@@ -266,6 +427,10 @@ export function upgradeAutoroll(state: GameState): GameState | null {
       level: newLevel,
       cooldown: newCooldown,
     },
+    stats: {
+      ...stats,
+      autoroll: autorollStats,
+    },
   };
 }
 
@@ -274,12 +439,29 @@ export function upgradeAutoroll(state: GameState): GameState | null {
  */
 export function toggleAutoroll(state: GameState): GameState {
   if (state.autoroll.level === 0) return state; // Can't toggle if not unlocked
-  
+
+  const stats = ensureStats(state.stats);
+  const isEnabling = !state.autoroll.enabled;
+  const autorollStats = isEnabling
+    ? {
+        startedAt: Date.now(),
+        creditsEarned: new Decimal(0),
+        rolls: 0,
+      }
+    : {
+        ...stats.autoroll,
+        startedAt: null,
+      };
+
   return {
     ...state,
     autoroll: {
       ...state.autoroll,
       enabled: !state.autoroll.enabled,
+    },
+    stats: {
+      ...stats,
+      autoroll: autorollStats,
     },
   };
 }
@@ -324,40 +506,49 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   if (!state.autoroll.enabled || state.autoroll.level === 0) {
     return state;
   }
-  
+
   const timeDiff = currentTime - state.lastSaveTimestamp;
   const cooldownMs = state.autoroll.cooldown.toNumber() * 1000;
   const rollsPerformed = Math.floor(timeDiff / cooldownMs);
-  
+
   if (rollsPerformed <= 0) return state;
-  
-  // Calculate total credits earned
-  let totalCreditsEarned = new Decimal(0);
-  const unlockedDice = state.dice.filter(d => d.unlocked);
-  
+
+  let workingState: GameState = {
+    ...state,
+    dice: state.dice.map(d => ({ ...d, isRolling: false })),
+  };
+
   for (let i = 0; i < rollsPerformed; i++) {
-    const rolledFaces: number[] = [];
-    // sum this roll's base credits
     let rollBase = new Decimal(0);
-    unlockedDice.forEach(die => {
+    const rolledFaces: number[] = [];
+    const updatedDice = workingState.dice.map(die => {
+      if (!die.unlocked) {
+        return { ...die, isRolling: false };
+      }
+
       const face = rollDie();
       rolledFaces.push(face);
       rollBase = rollBase.plus(die.multiplier.times(face).times(die.id));
+      return { ...die, currentFace: face, isRolling: false };
     });
 
     const combo = detectCombo(rolledFaces);
-    if (combo) {
-      const multiplier = getComboMultiplier(combo);
-      totalCreditsEarned = totalCreditsEarned.plus(rollBase.times(multiplier));
-    } else {
-      totalCreditsEarned = totalCreditsEarned.plus(rollBase);
-    }
+    const result = applyRollOutcome(workingState, {
+      rolledFaces,
+      baseCredits: rollBase,
+      combo,
+      updatedDice,
+    });
+
+    workingState = {
+      ...result.newState,
+      dice: updatedDice,
+    };
   }
-  
+
   return {
-    ...state,
-    credits: state.credits.plus(totalCreditsEarned),
-    totalRolls: state.totalRolls + rollsPerformed,
+    ...workingState,
+    dice: workingState.dice.map(d => ({ ...d, isRolling: false })),
     lastSaveTimestamp: currentTime,
   };
 }

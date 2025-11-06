@@ -1,4 +1,5 @@
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import type { ComboResult } from './combo';
 
 export interface DieState {
   id: number;
@@ -22,6 +23,63 @@ export interface GameSettings {
   theme: 'dark' | 'light';
 }
 
+export interface ComboHistoryEntry {
+  timestamp: number;
+  combo: ComboResult;
+  chain: number;
+}
+
+export interface ComboChainStats {
+  current: number;
+  best: number;
+  lastComboRoll: number | null;
+  history: ComboHistoryEntry[];
+}
+
+export interface AutorollSessionStats {
+  startedAt: number | null;
+  creditsEarned: DecimalType;
+  rolls: number;
+}
+
+export interface GameStats {
+  bestRoll: DecimalType;
+  bestRollFaces: number[];
+  totalCreditsEarned: DecimalType;
+  recentRolls: string[];
+  lastRollCredits: DecimalType;
+  comboChain: ComboChainStats;
+  autoroll: AutorollSessionStats;
+}
+
+export interface AchievementState {
+  unlocked: string[];
+  newlyUnlocked: string[];
+}
+
+export interface SerializedComboChainStats {
+  current: number;
+  best: number;
+  lastComboRoll: number | null;
+  history: Array<ComboHistoryEntry>;
+}
+
+export interface SerializedAutorollStats {
+  startedAt: number | null;
+  creditsEarned: string;
+  rolls: number;
+}
+
+export interface SerializedGameStats {
+  bestRoll: string;
+  bestRollFaces: number[];
+  totalCreditsEarned: string;
+  recentRolls: string[];
+  lastRollCredits: string;
+  comboChain: SerializedComboChainStats;
+  autoroll: SerializedAutorollStats;
+}
+
 export interface GameState {
   credits: DecimalType;
   dice: DieState[];
@@ -29,6 +87,8 @@ export interface GameState {
   settings: GameSettings;
   totalRolls: number;
   lastSaveTimestamp: number;
+  stats: GameStats;
+  achievements: AchievementState;
   // Prestige / ascension state
   prestige?: {
     luckPoints: DecimalType;
@@ -48,6 +108,8 @@ export interface SerializedGameState {
   settings: GameSettings;
   totalRolls: number;
   lastSaveTimestamp: number;
+  stats?: SerializedGameStats;
+  achievements?: AchievementState;
   prestige?: {
     luckPoints: string;
     luckTier: number;
@@ -76,4 +138,5 @@ export interface GameConstants {
   AUTOROLL_COST_GROWTH: DecimalType;
   ANIMATION_UNLOCK_COST: DecimalType;
   MAX_ANIMATION_LEVEL: number;
+  MAX_DIE_LEVEL: number;
 }
