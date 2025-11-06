@@ -1,7 +1,8 @@
 import React from 'react';
 import { DieState } from '../types/game';
-import { formatShort, formatFull } from '../utils/decimal';
+import { formatShort, formatFull, calculateMultiplier } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import { GAME_CONSTANTS } from '../utils/constants';
 
 interface DieCardProps {
   die: DieState;
@@ -28,6 +29,38 @@ export const DieCard: React.FC<DieCardProps> = ({
   canLevelUp,
   canUnlockAnimation,
 }) => {
+  const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
+  const nextLevel = die.level + 1;
+  const nextMultiplier = calculateMultiplier(
+    GAME_CONSTANTS.BASE_MULTIPLIER,
+    nextLevel,
+    GAME_CONSTANTS.MULTIPLIER_PER_LEVEL
+  );
+  const multiplierGain = nextMultiplier.minus(die.multiplier);
+  const cardClasses = [
+    'die-card',
+    'glass-card',
+    die.unlocked ? 'unlocked' : 'locked',
+  ];
+
+  if (canLevelUp && !isMaxLevel) {
+    cardClasses.push('die-card--upgrade-ready');
+  }
+  if (canUnlockAnimation && die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL) {
+    cardClasses.push('die-card--animation-ready');
+  }
+  if (isMaxLevel) {
+    cardClasses.push('die-card--maxed');
+  }
+
+  const cardClassName = cardClasses.join(' ');
+  const levelButtonClass = canLevelUp && !isMaxLevel
+    ? 'btn btn-secondary btn-small btn-glow'
+    : 'btn btn-secondary btn-small';
+  const animationButtonClass = canUnlockAnimation
+    ? 'btn btn-primary btn-small btn-glow'
+    : 'btn btn-primary btn-small';
+
   const getDieFace = (face: number): string => {
     const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
     return faces[face - 1] || '⚀';
@@ -61,7 +94,7 @@ export const DieCard: React.FC<DieCardProps> = ({
   }
 
   return (
-    <div className="die-card glass-card unlocked">
+    <div className={cardClassName}>
       <div className="die-info">
         <div className="die-level">Die #{die.id} • Level {die.level}</div>
       </div>
@@ -78,28 +111,41 @@ export const DieCard: React.FC<DieCardProps> = ({
       </div>
 
       <div className="die-actions" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button
-          className="btn btn-secondary btn-small"
-          onClick={onLevelUp}
-          disabled={!canLevelUp}
-          title={levelUpCost ? formatFull(levelUpCost) : ''}
-        >
-          Level Up ({levelUpCost ? formatShort(levelUpCost) : '?'})
-        </button>
+        {!isMaxLevel ? (
+          <div className="die-action die-action--previewable">
+            <button
+              className={levelButtonClass}
+              onClick={onLevelUp}
+              disabled={!canLevelUp}
+              title={levelUpCost ? formatFull(levelUpCost) : ''}
+            >
+              Level Up ({levelUpCost ? formatShort(levelUpCost) : '?'})
+            </button>
+            <div className="die-action__preview">
+              <div>Next Level: {nextLevel}</div>
+              <div>Multiplier: ×{formatShort(nextMultiplier)}</div>
+              <div>Gain: +{formatShort(multiplierGain)} / face</div>
+            </div>
+          </div>
+        ) : (
+          <div className="die-max-label" aria-live="polite">⭐ Max Level Reached</div>
+        )}
 
-        {die.animationLevel < 3 && (
+        {die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL && (
           <button
-            className="btn btn-primary btn-small"
+            className={animationButtonClass}
             onClick={onUnlockAnimation}
             disabled={!canUnlockAnimation}
             title={animationUnlockCost ? formatFull(animationUnlockCost) : ''}
           >
-            {die.animationLevel === 0 ? '✨ Unlock Animation' : `✨ Upgrade Animation (${die.animationLevel}/3)`}
+            {die.animationLevel === 0
+              ? '✨ Unlock Animation'
+              : `✨ Upgrade Animation (${die.animationLevel}/${GAME_CONSTANTS.MAX_ANIMATION_LEVEL})`}
             {animationUnlockCost && ` - ${formatShort(animationUnlockCost)}`}
           </button>
         )}
 
-        {die.animationLevel === 3 && (
+        {die.animationLevel === GAME_CONSTANTS.MAX_ANIMATION_LEVEL && (
           <div style={{ fontSize: '0.85rem', color: 'var(--color-secondary)', textAlign: 'center' }}>
             ⭐ Max Animation
           </div>

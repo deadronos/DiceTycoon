@@ -7,6 +7,9 @@ describe('Header', () => {
   it('renders header with credits display', () => {
     render(<App />);
     expect(screen.getByText('🎲 Dice Tycoon')).toBeTruthy();
-    expect(screen.getByText(/Credits/i)).toBeTruthy();
+    const creditsStatus = screen.getByRole('status', {
+      name: /Current Credits/i,
+    });
+    expect(creditsStatus.textContent ?? '').toMatch(/💰\s*0\s*Credits/i);
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types/game';
 import { CreditsDisplay } from './components/CreditsDisplay';
 import { LuckCurrencyDisplay } from './components/LuckCurrencyDisplay';
@@ -9,6 +9,8 @@ import { AutorollControls } from './components/AutorollControls';
 import { CreditPopup } from './components/CreditPopup';
 import { ComboToast } from './components/ComboToast';
 import { ConfettiBurst } from './components/ConfettiBurst';
+import { ComboHistoryPanel } from './components/ComboHistoryPanel';
+import { AchievementsPanel } from './components/AchievementsPanel';
 import {
   createDefaultGameState,
   safeLoad,
@@ -37,12 +39,14 @@ import {
   canBuyPrestigeUpgrade,
   getPrestigeUpgradeCost,
 } from './utils/game-logic';
-import { canAfford } from './utils/decimal';
+import { canAfford, formatShort, formatFull } from './utils/decimal';
 import Decimal from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, GAME_CONSTANTS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboResult, ComboIntensity } from './types/combo';
 import './styles.css';
+
+const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -58,13 +62,18 @@ export const App: React.FC = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
-  const [comboToast, setComboToast] = useState<{ combo: ComboResult; id: number } | null>(null);
-  const [comboMetadata, setComboMetadata] = useState<ComboMetadata | null>(null);
-  const [showComboToast, setShowComboToast] = useState(false);
+  const [comboToasts, setComboToasts] = useState<Array<{
+    id: number;
+    combo: ComboResult;
+    metadata: ComboMetadata;
+    visible: boolean;
+  }>>([]);
+  const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
   const [showPrestige, setShowPrestige] = useState(false);
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
+  const comboToastTimersRef = useRef<Map<number, number>>(new Map());
 
   // Save game state
   const saveGame = useCallback(() => {
@@ -85,6 +94,25 @@ export const App: React.FC = () => {
     };
   }, [saveGame]);
 
+  useEffect(() => {
+    return () => {
+      comboToastTimersRef.current.forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      comboToastTimersRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    const activeIds = new Set(comboToasts.map(toast => toast.id));
+    comboToastTimersRef.current.forEach((timerId, toastId) => {
+      if (!activeIds.has(toastId)) {
+        window.clearTimeout(timerId);
+        comboToastTimersRef.current.delete(toastId);
+      }
+    });
+  }, [comboToasts]);
+
   // Save on page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -96,8 +124,18 @@ export const App: React.FC = () => {
     };
   }, [saveGame]);
 
-  const handleComboToastClose = useCallback(() => {
-    setShowComboToast(false);
+  const handleComboToastClose = useCallback((id: number) => {
+    const timerId = comboToastTimersRef.current.get(id);
+    if (timerId) {
+      window.clearTimeout(timerId);
+      comboToastTimersRef.current.delete(id);
+    }
+    setComboToasts(prev =>
+      prev.map(toast => (toast.id === id ? { ...toast, visible: false } : toast))
+    );
+    window.setTimeout(() => {
+      setComboToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 320);
   }, []);
 
   // Handle roll
@@ -112,9 +150,18 @@ export const App: React.FC = () => {
     if (combo) {
       const timestamp = Date.now() + Math.random();
       const metadata = getComboMetadata(combo);
-      setComboToast({ combo, id: timestamp });
-      setComboMetadata(metadata);
-      setShowComboToast(true);
+      setComboToasts(prev => {
+        const next = [
+          { id: timestamp, combo, metadata, visible: true },
+          ...prev.filter(toast => toast.id !== timestamp),
+        ];
+        return next.slice(0, 3);
+      });
+      const timerId = window.setTimeout(() => {
+        handleComboToastClose(timestamp);
+      }, COMBO_TOAST_AUTO_DISMISS_MS);
+      comboToastTimersRef.current.set(timestamp, timerId);
+      setLastComboMetadata(metadata);
       setConfettiTrigger(timestamp);
     }
 
@@ -123,23 +170,6 @@ export const App: React.FC = () => {
       setGameState(prev => stopRollingAnimation(prev));
     }, ROLL_ANIMATION_DURATION);
   }, [gameState]);
-
-  useEffect(() => {
-    if (showComboToast) {
-      return;
-    }
-
-    if (!comboMetadata && !comboToast) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setComboMetadata(null);
-      setComboToast(null);
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [showComboToast, comboMetadata, comboToast]);
 
   // Handle autoroll
   useEffect(() => {
@@ -236,8 +266,22 @@ export const App: React.FC = () => {
 
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
-  const confettiIntensity: ComboIntensity = comboMetadata?.intensity ?? 'low';
-  const activeCombo = useMemo(() => comboToast?.combo ?? null, [comboToast]);
+  const confettiIntensity: ComboIntensity = lastComboMetadata?.intensity ?? 'low';
+  const unlockedDiceCount = gameState.dice.filter(d => d.unlocked).length;
+  const totalLevels = gameState.dice.reduce((sum, d) => sum + d.level, 0);
+  const totalPrestiges = gameState.prestige?.totalPrestiges ?? 0;
+  const totalCreditsEarned = gameState.stats.totalCreditsEarned;
+  const creditsPerRoll = gameState.totalRolls > 0
+    ? totalCreditsEarned.div(gameState.totalRolls)
+    : new Decimal(0);
+  const recentSampleSize = gameState.stats.recentRolls.length;
+  const averageRecent = recentSampleSize > 0
+    ? gameState.stats.recentRolls.reduce(
+        (sum, value) => sum.plus(new Decimal(value)),
+        new Decimal(0)
+      ).div(recentSampleSize)
+    : new Decimal(0);
+  const bestRoll = gameState.stats.bestRoll;
 
   return (
     <div id="app">
@@ -260,8 +304,9 @@ export const App: React.FC = () => {
           <div className="dice-grid">
             {gameState.dice.map(die => {
               const unlockCost = !die.unlocked ? getUnlockCost(die.id) : undefined;
-              const levelUpCost = die.unlocked ? getLevelUpCost(die.level) : undefined;
-              const animationUnlockCost = die.unlocked && die.animationLevel < 3
+              const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
+              const levelUpCost = die.unlocked && !isMaxLevel ? getLevelUpCost(die.level) : undefined;
+              const animationUnlockCost = die.unlocked && die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL
                 ? getAnimationUnlockCost(die.animationLevel)
                 : undefined;
 
@@ -295,25 +340,60 @@ export const App: React.FC = () => {
             autoroll={gameState.autoroll}
             upgradeCost={autorollUpgradeCost}
             canUpgrade={canAfford(gameState.credits, autorollUpgradeCost)}
+            sessionStats={gameState.stats.autoroll}
             onToggle={handleToggleAutoroll}
             onUpgrade={handleUpgradeAutoroll}
           />
 
           <div className="stats-section glass-card">
             <h3>📊 Stats</h3>
-            <div className="stat-item">
-              <div className="stat-label">Unlocked Dice</div>
-              <div className="stat-value">
-                {gameState.dice.filter(d => d.unlocked).length} / {gameState.dice.length}
+            <div className="stat-grid">
+              <div className="stat-item">
+                <div className="stat-label">Unlocked Dice</div>
+                <div className="stat-value">
+                  {unlockedDiceCount} / {gameState.dice.length}
+                </div>
               </div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-label">Total Levels</div>
-              <div className="stat-value">
-                {gameState.dice.reduce((sum, d) => sum + d.level, 0)}
+              <div className="stat-item">
+                <div className="stat-label">Total Levels</div>
+                <div className="stat-value">{totalLevels}</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Credits / Roll</div>
+                <div className="stat-value" title={formatFull(creditsPerRoll)}>
+                  {formatShort(creditsPerRoll)}
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Best Roll Ever</div>
+                <div className="stat-value" title={formatFull(bestRoll)}>
+                  {formatShort(bestRoll)}
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">
+                  Average Roll {recentSampleSize > 0 ? `(last ${recentSampleSize})` : ''}
+                </div>
+                <div className="stat-value" title={formatFull(averageRecent)}>
+                  {recentSampleSize > 0 ? formatShort(averageRecent) : '—'}
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Total Credits Earned</div>
+                <div className="stat-value" title={formatFull(totalCreditsEarned)}>
+                  {formatShort(totalCreditsEarned)}
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Prestiges Performed</div>
+                <div className="stat-value">{totalPrestiges}</div>
               </div>
             </div>
           </div>
+
+          <ComboHistoryPanel comboChain={gameState.stats.comboChain} />
+
+          <AchievementsPanel achievements={gameState.achievements} />
 
           <div className="settings-section glass-card">
             <h3>⚙️ Settings</h3>
@@ -339,12 +419,19 @@ export const App: React.FC = () => {
         />
       )}
       <ConfettiBurst trigger={confettiTrigger} intensity={confettiIntensity} />
-      <ComboToast
-        combo={activeCombo}
-        metadata={comboMetadata}
-        visible={showComboToast}
-        onClose={handleComboToastClose}
-      />
+      {comboToasts.length > 0 && (
+        <div className="combo-toast-stack" aria-live="polite" aria-relevant="additions text">
+          {comboToasts.map(toast => (
+            <ComboToast
+              key={toast.id}
+              combo={toast.combo}
+              metadata={toast.metadata}
+              visible={toast.visible}
+              onClose={() => handleComboToastClose(toast.id)}
+            />
+          ))}
+        </div>
+      )}
       <PrestigePanel
         visible={showPrestige}
         onClose={() => setShowPrestige(false)}
