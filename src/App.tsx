@@ -46,6 +46,8 @@ import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboResult, ComboIntensity } from './types/combo';
 import './styles.css';
 
+const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
+
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const loaded = safeLoad();
@@ -71,6 +73,7 @@ export const App: React.FC = () => {
   const [showPrestige, setShowPrestige] = useState(false);
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
+  const comboToastTimersRef = useRef<Map<number, number>>(new Map());
 
   // Save game state
   const saveGame = useCallback(() => {
@@ -91,6 +94,25 @@ export const App: React.FC = () => {
     };
   }, [saveGame]);
 
+  useEffect(() => {
+    return () => {
+      comboToastTimersRef.current.forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      comboToastTimersRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    const activeIds = new Set(comboToasts.map(toast => toast.id));
+    comboToastTimersRef.current.forEach((timerId, toastId) => {
+      if (!activeIds.has(toastId)) {
+        window.clearTimeout(timerId);
+        comboToastTimersRef.current.delete(toastId);
+      }
+    });
+  }, [comboToasts]);
+
   // Save on page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -103,6 +125,11 @@ export const App: React.FC = () => {
   }, [saveGame]);
 
   const handleComboToastClose = useCallback((id: number) => {
+    const timerId = comboToastTimersRef.current.get(id);
+    if (timerId) {
+      window.clearTimeout(timerId);
+      comboToastTimersRef.current.delete(id);
+    }
     setComboToasts(prev =>
       prev.map(toast => (toast.id === id ? { ...toast, visible: false } : toast))
     );
@@ -130,6 +157,10 @@ export const App: React.FC = () => {
         ];
         return next.slice(0, 3);
       });
+      const timerId = window.setTimeout(() => {
+        handleComboToastClose(timestamp);
+      }, COMBO_TOAST_AUTO_DISMISS_MS);
+      comboToastTimersRef.current.set(timestamp, timerId);
       setLastComboMetadata(metadata);
       setConfettiTrigger(timestamp);
     }
