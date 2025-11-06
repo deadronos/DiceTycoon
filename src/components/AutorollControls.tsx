@@ -26,6 +26,27 @@ export const AutorollControls: React.FC<AutorollControlsProps> = ({
   const progressStyle = {
     animationDuration: `${Math.max(cooldownSeconds, 0.1)}s`,
   } as React.CSSProperties;
+  const [activeSeconds, setActiveSeconds] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const startedAt = sessionStats.startedAt;
+
+    if (!startedAt) {
+      setActiveSeconds(null);
+      return;
+    }
+
+    const updateElapsed = () => {
+      const elapsedMs = Date.now() - startedAt;
+      setActiveSeconds(elapsedMs > 0 ? Math.floor(elapsedMs / 1000) : 0);
+    };
+
+    updateElapsed();
+    const intervalId = window.setInterval(updateElapsed, 1000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [sessionStats.startedAt]);
 
   return (
     <div className="autoroll-section glass-card">
@@ -80,11 +101,8 @@ export const AutorollControls: React.FC<AutorollControlsProps> = ({
 
           <div className="autoroll-meta">
             <div>Batch Size: 1</div>
-            {sessionStats.startedAt && (
-              <div>
-                Active for{' '}
-                {Math.floor((Date.now() - sessionStats.startedAt) / 1000)}s
-              </div>
+            {activeSeconds !== null && (
+              <div>Active for {activeSeconds}s</div>
             )}
           </div>
 
