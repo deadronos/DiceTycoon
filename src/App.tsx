@@ -33,7 +33,6 @@ import {
   getAnimationUnlockCost,
   calculateOfflineProgress,
   calculateLuckGain,
-  preparePrestigePreview,
   performPrestigeReset,
   buyPrestigeUpgrade,
   canBuyPrestigeUpgrade,
@@ -95,11 +94,12 @@ export const App: React.FC = () => {
   }, [saveGame]);
 
   useEffect(() => {
+    const timers = comboToastTimersRef.current;
     return () => {
-      comboToastTimersRef.current.forEach(timerId => {
+      timers.forEach(timerId => {
         window.clearTimeout(timerId);
       });
-      comboToastTimersRef.current.clear();
+      timers.clear();
     };
   }, []);
 
@@ -140,36 +140,37 @@ export const App: React.FC = () => {
 
   // Handle roll
   const handleRoll = useCallback(() => {
-    const { newState, creditsEarned, combo } = performRoll(gameState);
-    setGameState(newState);
+    setGameState(prevState => {
+      const { newState, creditsEarned, combo } = performRoll(prevState);
 
-    // Show popup
-    setPopupCredits(creditsEarned);
-    setShowPopup(true);
+      setPopupCredits(creditsEarned);
+      setShowPopup(true);
 
-    if (combo) {
-      const timestamp = Date.now() + Math.random();
-      const metadata = getComboMetadata(combo);
-      setComboToasts(prev => {
-        const next = [
-          { id: timestamp, combo, metadata, visible: true },
-          ...prev.filter(toast => toast.id !== timestamp),
-        ];
-        return next.slice(0, 3);
-      });
-      const timerId = window.setTimeout(() => {
-        handleComboToastClose(timestamp);
-      }, COMBO_TOAST_AUTO_DISMISS_MS);
-      comboToastTimersRef.current.set(timestamp, timerId);
-      setLastComboMetadata(metadata);
-      setConfettiTrigger(timestamp);
-    }
+      if (combo) {
+        const timestamp = Date.now() + Math.random();
+        const metadata = getComboMetadata(combo);
+        setComboToasts(prev => {
+          const next = [
+            { id: timestamp, combo, metadata, visible: true },
+            ...prev.filter(toast => toast.id !== timestamp),
+          ];
+          return next.slice(0, 3);
+        });
+        const timerId = window.setTimeout(() => {
+          handleComboToastClose(timestamp);
+        }, COMBO_TOAST_AUTO_DISMISS_MS);
+        comboToastTimersRef.current.set(timestamp, timerId);
+        setLastComboMetadata(metadata);
+        setConfettiTrigger(timestamp);
+      }
 
-    // Stop rolling animation after duration
-    setTimeout(() => {
-      setGameState(prev => stopRollingAnimation(prev));
-    }, ROLL_ANIMATION_DURATION);
-  }, [gameState]);
+      setTimeout(() => {
+        setGameState(prev => stopRollingAnimation(prev));
+      }, ROLL_ANIMATION_DURATION);
+
+      return newState;
+    });
+  }, [handleComboToastClose]);
 
   // Handle autoroll
   useEffect(() => {
@@ -287,14 +288,14 @@ export const App: React.FC = () => {
     <div id="app">
       <header className="header">
         <h1>🎲 Dice Tycoon</h1>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="header-bar">
             <CreditsDisplay credits={gameState.credits} />
             <LuckCurrencyDisplay
               luckPoints={gameState.prestige?.luckPoints ?? new Decimal(0)}
               onOpen={() => setShowPrestige(true)}
             />
           </div>
-        <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--color-text-dim)' }}>
+        <div className="header-subtitle">
           Total Rolls: {gameState.totalRolls.toLocaleString()}
         </div>
       </header>
@@ -397,9 +398,9 @@ export const App: React.FC = () => {
 
           <div className="settings-section glass-card">
             <h3>⚙️ Settings</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="settings-actions">
               <button className="btn btn-secondary btn-small" onClick={handleExport}>
-                💾 Export Save
+                4be Export Save
               </button>
               <button className="btn btn-secondary btn-small" onClick={handleImport}>
                 📂 Import Save

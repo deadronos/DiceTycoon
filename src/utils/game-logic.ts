@@ -199,34 +199,49 @@ export function getLuckGainMultiplier(state: GameState): DecimalType {
 }
 
 /**
- * Perform a roll for all unlocked dice
+ * Core single-roll pipeline used by both manual rolls and offline autoroll.
  */
-export function performRoll(
-  state: GameState
+function executeRoll(
+  state: GameState,
+  options: { animate?: boolean } = {}
 ): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+  const { animate = true } = options;
+
   let totalCredits = new Decimal(0);
   const rolledFaces: number[] = [];
-  const newDice = state.dice.map(die => {
+
+  const updatedDice = state.dice.map(die => {
     if (!die.unlocked) return die;
 
     const face = rollDie();
+    rolledFaces.push(face);
     const credits = die.multiplier.times(face).times(die.id);
     totalCredits = totalCredits.plus(credits);
-    rolledFaces.push(face);
 
     return {
       ...die,
       currentFace: face,
-      isRolling: true,
+      isRolling: animate ? true : false,
     };
   });
+
   const combo = detectCombo(rolledFaces);
+
   return applyRollOutcome(state, {
     rolledFaces,
     baseCredits: totalCredits,
     combo,
-    updatedDice: newDice,
+    updatedDice,
   });
+}
+
+/**
+ * Perform a roll for all unlocked dice (manual roll entrypoint).
+ */
+export function performRoll(
+  state: GameState
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+  return executeRoll(state, { animate: true });
 }
 
 /**
@@ -276,7 +291,7 @@ export function getLuckProgress(state: GameState): { progressPercent: number; ra
     const log10 = DecimalMath.log10(credits);
     const base = DecimalMath.max(log10.minus(2), new Decimal(0));
     const luckBoost = getLuckGainMultiplier(state);
-    const rawGain = base.times(0.25).times(luckBoost);
+    const rawGain = base.times(0.6).times(luckBoost);
     const floored = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
     const fractional = rawGain.minus(floored);
     const percent = Math.max(0, Math.min(1, fractional.toNumber())) * 100;
@@ -398,6 +413,25 @@ export function levelUpDie(state: GameState, dieId: number): GameState | null {
 }
 
 /**
+ * Internal helpers for autoroll session/stat management
+ */
+function startAutorollSession(stats: GameStats) {
+  return {
+    ...stats.autoroll,
+    startedAt: Date.now(),
+    creditsEarned: new Decimal(0),
+    rolls: 0,
+  };
+}
+
+function stopAutorollSession(stats: GameStats) {
+  return {
+    ...stats.autoroll,
+    startedAt: null,
+  };
+}
+
+/**
  * Upgrade autoroll
  */
 export function upgradeAutoroll(state: GameState): GameState | null {
@@ -411,11 +445,7 @@ export function upgradeAutoroll(state: GameState): GameState | null {
 
   const stats = ensureStats(state.stats);
   const autorollStats = newLevel === 1
-    ? {
-        startedAt: Date.now(),
-        creditsEarned: new Decimal(0),
-        rolls: 0,
-      }
+    ? startAutorollSession(stats)
     : stats.autoroll;
 
   return {
@@ -442,26 +472,16 @@ export function toggleAutoroll(state: GameState): GameState {
 
   const stats = ensureStats(state.stats);
   const isEnabling = !state.autoroll.enabled;
-  const autorollStats = isEnabling
-    ? {
-        startedAt: Date.now(),
-        creditsEarned: new Decimal(0),
-        rolls: 0,
-      }
-    : {
-        ...stats.autoroll,
-        startedAt: null,
-      };
 
   return {
     ...state,
     autoroll: {
       ...state.autoroll,
-      enabled: !state.autoroll.enabled,
+      enabled: isEnabling,
     },
     stats: {
       ...stats,
-      autoroll: autorollStats,
+      autoroll: isEnabling ? startAutorollSession(stats) : stopAutorollSession(stats),
     },
   };
 }
@@ -500,7 +520,7 @@ export function stopRollingAnimation(state: GameState): GameState {
 }
 
 /**
- * Calculate offline progress
+ * Calculate offline progress using the same roll pipeline as manual rolls.
  */
 export function calculateOfflineProgress(state: GameState, currentTime: number): GameState {
   if (!state.autoroll.enabled || state.autoroll.level === 0) {
@@ -511,7 +531,7 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   const cooldownMs = state.autoroll.cooldown.toNumber() * 1000;
   const rollsPerformed = Math.floor(timeDiff / cooldownMs);
 
-  if (rollsPerformed <= 0) return state;
+  if (rollsPerformed <= 0) return { ...state, lastSaveTimestamp: currentTime };
 
   let workingState: GameState = {
     ...state,
@@ -519,30 +539,10 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   };
 
   for (let i = 0; i < rollsPerformed; i++) {
-    let rollBase = new Decimal(0);
-    const rolledFaces: number[] = [];
-    const updatedDice = workingState.dice.map(die => {
-      if (!die.unlocked) {
-        return { ...die, isRolling: false };
-      }
-
-      const face = rollDie();
-      rolledFaces.push(face);
-      rollBase = rollBase.plus(die.multiplier.times(face).times(die.id));
-      return { ...die, currentFace: face, isRolling: false };
-    });
-
-    const combo = detectCombo(rolledFaces);
-    const result = applyRollOutcome(workingState, {
-      rolledFaces,
-      baseCredits: rollBase,
-      combo,
-      updatedDice,
-    });
-
+    const result = executeRoll(workingState, { animate: false });
     workingState = {
       ...result.newState,
-      dice: updatedDice,
+      dice: result.newState.dice.map(d => ({ ...d, isRolling: false })),
     };
   }
 
