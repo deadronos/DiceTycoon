@@ -1,4 +1,5 @@
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import Decimal from './decimal';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameConstants } from '../types/game';
 
 export type PrestigeShopCategory = 'passive' | 'qol' | 'gameplay' | 'consumable' | 'prestige-exclusive';

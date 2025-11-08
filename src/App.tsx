@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types/game';
-import { CreditsDisplay } from './components/CreditsDisplay';
-import { LuckCurrencyDisplay } from './components/LuckCurrencyDisplay';
 import { PrestigePanel } from './components/PrestigePanel';
-import { DieCard } from './components/DieCard';
-import { RollButton } from './components/RollButton';
-import { AutorollControls } from './components/AutorollControls';
 import { CreditPopup } from './components/CreditPopup';
-import { ComboToast } from './components/ComboToast';
 import { ConfettiBurst } from './components/ConfettiBurst';
-import { ComboHistoryPanel } from './components/ComboHistoryPanel';
-import { AchievementsPanel } from './components/AchievementsPanel';
+import DiceGrid from './components/DiceGrid';
+import AppHeader from './components/app/AppHeader';
+import GameControlPanel from './components/app/GameControlPanel';
+import ComboToastStack, { type ComboToastEntry } from './components/ComboToastStack';
 import {
   createDefaultGameState,
   safeLoad,
@@ -27,23 +23,19 @@ import {
   toggleAutoroll,
   unlockAnimation,
   stopRollingAnimation,
-  getUnlockCost,
-  getLevelUpCost,
   getAutorollUpgradeCost,
-  getAnimationUnlockCost,
-  calculateOfflineProgress,
   calculateLuckGain,
-  preparePrestigePreview,
   performPrestigeReset,
   buyPrestigeUpgrade,
   canBuyPrestigeUpgrade,
   getPrestigeUpgradeCost,
 } from './utils/game-logic';
-import { canAfford, formatShort, formatFull } from './utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, GAME_CONSTANTS, type PrestigeShopKey } from './utils/constants';
+import { calculateOfflineProgress } from './utils/offline-progress';
+import { canAfford } from './utils/decimal';
+import Decimal from './utils/decimal';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
-import type { ComboResult, ComboIntensity } from './types/combo';
+import type { ComboIntensity } from './types/combo';
 import './styles.css';
 
 const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
@@ -62,12 +54,7 @@ export const App: React.FC = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
-  const [comboToasts, setComboToasts] = useState<Array<{
-    id: number;
-    combo: ComboResult;
-    metadata: ComboMetadata;
-    visible: boolean;
-  }>>([]);
+  const [comboToasts, setComboToasts] = useState<ComboToastEntry[]>([]);
   const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
   const [showPrestige, setShowPrestige] = useState(false);
@@ -95,11 +82,12 @@ export const App: React.FC = () => {
   }, [saveGame]);
 
   useEffect(() => {
+    const timers = comboToastTimersRef.current;
     return () => {
-      comboToastTimersRef.current.forEach(timerId => {
+      timers.forEach(timerId => {
         window.clearTimeout(timerId);
       });
-      comboToastTimersRef.current.clear();
+      timers.clear();
     };
   }, []);
 
@@ -140,36 +128,37 @@ export const App: React.FC = () => {
 
   // Handle roll
   const handleRoll = useCallback(() => {
-    const { newState, creditsEarned, combo } = performRoll(gameState);
-    setGameState(newState);
+    setGameState(prevState => {
+      const { newState, creditsEarned, combo } = performRoll(prevState);
 
-    // Show popup
-    setPopupCredits(creditsEarned);
-    setShowPopup(true);
+      setPopupCredits(creditsEarned);
+      setShowPopup(true);
 
-    if (combo) {
-      const timestamp = Date.now() + Math.random();
-      const metadata = getComboMetadata(combo);
-      setComboToasts(prev => {
-        const next = [
-          { id: timestamp, combo, metadata, visible: true },
-          ...prev.filter(toast => toast.id !== timestamp),
-        ];
-        return next.slice(0, 3);
-      });
-      const timerId = window.setTimeout(() => {
-        handleComboToastClose(timestamp);
-      }, COMBO_TOAST_AUTO_DISMISS_MS);
-      comboToastTimersRef.current.set(timestamp, timerId);
-      setLastComboMetadata(metadata);
-      setConfettiTrigger(timestamp);
-    }
+      if (combo) {
+        const timestamp = Date.now() + Math.random();
+        const metadata = getComboMetadata(combo);
+        setComboToasts(prev => {
+          const next = [
+            { id: timestamp, combo, metadata, visible: true },
+            ...prev.filter(toast => toast.id !== timestamp),
+          ];
+          return next.slice(0, 3);
+        });
+        const timerId = window.setTimeout(() => {
+          handleComboToastClose(timestamp);
+        }, COMBO_TOAST_AUTO_DISMISS_MS);
+        comboToastTimersRef.current.set(timestamp, timerId);
+        setLastComboMetadata(metadata);
+        setConfettiTrigger(timestamp);
+      }
 
-    // Stop rolling animation after duration
-    setTimeout(() => {
-      setGameState(prev => stopRollingAnimation(prev));
-    }, ROLL_ANIMATION_DURATION);
-  }, [gameState]);
+      setTimeout(() => {
+        setGameState(prev => stopRollingAnimation(prev));
+      }, ROLL_ANIMATION_DURATION);
+
+      return newState;
+    });
+  }, [handleComboToastClose]);
 
   // Handle autoroll
   useEffect(() => {
@@ -267,149 +256,42 @@ export const App: React.FC = () => {
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = lastComboMetadata?.intensity ?? 'low';
-  const unlockedDiceCount = gameState.dice.filter(d => d.unlocked).length;
-  const totalLevels = gameState.dice.reduce((sum, d) => sum + d.level, 0);
-  const totalPrestiges = gameState.prestige?.totalPrestiges ?? 0;
-  const totalCreditsEarned = gameState.stats.totalCreditsEarned;
-  const creditsPerRoll = gameState.totalRolls > 0
-    ? totalCreditsEarned.div(gameState.totalRolls)
-    : new Decimal(0);
-  const recentSampleSize = gameState.stats.recentRolls.length;
-  const averageRecent = recentSampleSize > 0
-    ? gameState.stats.recentRolls.reduce(
-        (sum, value) => sum.plus(new Decimal(value)),
-        new Decimal(0)
-      ).div(recentSampleSize)
-    : new Decimal(0);
-  const bestRoll = gameState.stats.bestRoll;
+  const currentLuck = gameState.prestige?.luckPoints ?? new Decimal(0);
+  const canUpgradeAutoroll = canAfford(gameState.credits, autorollUpgradeCost);
 
   return (
     <div id="app">
-      <header className="header">
-        <h1>🎲 Dice Tycoon</h1>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <CreditsDisplay credits={gameState.credits} />
-            <LuckCurrencyDisplay
-              luckPoints={gameState.prestige?.luckPoints ?? new Decimal(0)}
-              onOpen={() => setShowPrestige(true)}
-            />
-          </div>
-        <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--color-text-dim)' }}>
-          Total Rolls: {gameState.totalRolls.toLocaleString()}
-        </div>
-      </header>
+      <AppHeader
+        credits={gameState.credits}
+        luckPoints={currentLuck}
+        totalRolls={gameState.totalRolls}
+        onOpenPrestige={() => setShowPrestige(true)}
+      />
 
       <div className="main-layout">
         <div className="dice-section">
-          <div className="dice-grid">
-            {gameState.dice.map(die => {
-              const unlockCost = !die.unlocked ? getUnlockCost(die.id) : undefined;
-              const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
-              const levelUpCost = die.unlocked && !isMaxLevel ? getLevelUpCost(die.level) : undefined;
-              const animationUnlockCost = die.unlocked && die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL
-                ? getAnimationUnlockCost(die.animationLevel)
-                : undefined;
-
-              return (
-                <DieCard
-                  key={die.id}
-                  die={die}
-                  unlockCost={unlockCost}
-                  levelUpCost={levelUpCost}
-                  animationUnlockCost={animationUnlockCost}
-                  onUnlock={() => handleUnlockDie(die.id)}
-                  onLevelUp={() => handleLevelUpDie(die.id)}
-                  onUnlockAnimation={() => handleUnlockAnimation(die.id)}
-                  canUnlock={unlockCost ? canAfford(gameState.credits, unlockCost) : false}
-                  canLevelUp={levelUpCost ? canAfford(gameState.credits, levelUpCost) : false}
-                  canUnlockAnimation={animationUnlockCost ? canAfford(gameState.credits, animationUnlockCost) : false}
-                />
-              );
-            })}
-          </div>
+          <DiceGrid
+            gameState={gameState}
+            onUnlockDie={handleUnlockDie}
+            onLevelUpDie={handleLevelUpDie}
+            onUnlockAnimation={handleUnlockAnimation}
+          />
         </div>
 
-        <div className="controls-panel glass-card">
-          <RollButton
-            onRoll={handleRoll}
-            disabled={isAnyDieRolling}
-            isRolling={isAnyDieRolling}
-          />
-
-          <AutorollControls
-            autoroll={gameState.autoroll}
-            upgradeCost={autorollUpgradeCost}
-            canUpgrade={canAfford(gameState.credits, autorollUpgradeCost)}
-            sessionStats={gameState.stats.autoroll}
-            onToggle={handleToggleAutoroll}
-            onUpgrade={handleUpgradeAutoroll}
-          />
-
-          <div className="stats-section glass-card">
-            <h3>📊 Stats</h3>
-            <div className="stat-grid">
-              <div className="stat-item">
-                <div className="stat-label">Unlocked Dice</div>
-                <div className="stat-value">
-                  {unlockedDiceCount} / {gameState.dice.length}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Total Levels</div>
-                <div className="stat-value">{totalLevels}</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Credits / Roll</div>
-                <div className="stat-value" title={formatFull(creditsPerRoll)}>
-                  {formatShort(creditsPerRoll)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Best Roll Ever</div>
-                <div className="stat-value" title={formatFull(bestRoll)}>
-                  {formatShort(bestRoll)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">
-                  Average Roll {recentSampleSize > 0 ? `(last ${recentSampleSize})` : ''}
-                </div>
-                <div className="stat-value" title={formatFull(averageRecent)}>
-                  {recentSampleSize > 0 ? formatShort(averageRecent) : '—'}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Total Credits Earned</div>
-                <div className="stat-value" title={formatFull(totalCreditsEarned)}>
-                  {formatShort(totalCreditsEarned)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Prestiges Performed</div>
-                <div className="stat-value">{totalPrestiges}</div>
-              </div>
-            </div>
-          </div>
-
-          <ComboHistoryPanel comboChain={gameState.stats.comboChain} />
-
-          <AchievementsPanel achievements={gameState.achievements} />
-
-          <div className="settings-section glass-card">
-            <h3>⚙️ Settings</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button className="btn btn-secondary btn-small" onClick={handleExport}>
-                💾 Export Save
-              </button>
-              <button className="btn btn-secondary btn-small" onClick={handleImport}>
-                📂 Import Save
-              </button>
-              <button className="btn btn-danger btn-small" onClick={handleReset}>
-                🔄 Reset Game
-              </button>
-            </div>
-          </div>
-        </div>
+        <GameControlPanel
+          isAnyDieRolling={isAnyDieRolling}
+          onRoll={handleRoll}
+          autoroll={gameState.autoroll}
+          autorollUpgradeCost={autorollUpgradeCost}
+          canUpgradeAutoroll={canUpgradeAutoroll}
+          sessionStats={gameState.stats.autoroll}
+          onToggleAutoroll={handleToggleAutoroll}
+          onUpgradeAutoroll={handleUpgradeAutoroll}
+          gameState={gameState}
+          onExport={handleExport}
+          onImport={handleImport}
+          onReset={handleReset}
+        />
       </div>
 
       {showPopup && (
@@ -420,17 +302,7 @@ export const App: React.FC = () => {
       )}
       <ConfettiBurst trigger={confettiTrigger} intensity={confettiIntensity} />
       {comboToasts.length > 0 && (
-        <div className="combo-toast-stack" aria-live="polite" aria-relevant="additions text">
-          {comboToasts.map(toast => (
-            <ComboToast
-              key={toast.id}
-              combo={toast.combo}
-              metadata={toast.metadata}
-              visible={toast.visible}
-              onClose={() => handleComboToastClose(toast.id)}
-            />
-          ))}
-        </div>
+        <ComboToastStack comboToasts={comboToasts} onClose={handleComboToastClose} />
       )}
       <PrestigePanel
         visible={showPrestige}
@@ -443,7 +315,7 @@ export const App: React.FC = () => {
           setShowPrestige(false);
         }}
         luckGain={calculateLuckGain(gameState)}
-        currentLuck={gameState.prestige?.luckPoints ?? new Decimal(0)}
+        currentLuck={currentLuck}
         gameState={gameState}
         onBuyUpgrade={handleBuyPrestigeUpgrade}
         canBuyUpgrade={canBuyPrestigeUpgrade}

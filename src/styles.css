@@ -51,8 +51,8 @@ body {
 /* Glass morphism card style */
 .glass-card {
   background: var(--color-glass);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--color-glass-border);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-md);
@@ -80,6 +80,19 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 0 30px rgba(108, 92, 231, 0.5);
+}
+
+.header-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-subtitle {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--color-text-dim);
 }
 
 .credits-display {
@@ -471,6 +484,7 @@ body {
   right: 0;
   bottom: 0;
   background: rgba(15, 23, 36, 0.9);
+  -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
   display: flex;
   flex-direction: column;
@@ -929,6 +943,12 @@ body {
   margin: 10px 0;
 }
 
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header h1 {
@@ -961,6 +981,37 @@ body {
 .tooltip {
   position: relative;
 }
+  /* Generic tooltip meta row styling replacing inline styles */
+  .tooltip-meta-row {
+    margin-top: 6px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+  }
+  .tooltip-meta-row--tight {
+    margin-top: 4px;
+  }
+
+  /* Luck display inline style replacements */
+  .luck-display-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .luck-display-meta {
+    font-size: 0.9rem;
+    color: var(--color-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Progress bars driven by data-width attributes */
+  .luck-progress__fill[data-width] {
+    width: attr(data-width percentage);
+  }
+  .prestige-progress__bar[data-width] {
+    width: attr(data-width percentage);
+  }
 
 .tooltip .tooltiptext {
   visibility: hidden;
@@ -1054,8 +1105,8 @@ body {
   padding: 16px 24px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--color-text);
   transform: translateY(-24px);
   opacity: 0;

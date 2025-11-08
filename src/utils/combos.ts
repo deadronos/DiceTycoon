@@ -1,5 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import Decimal from './decimal';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { ComboResult, ComboKind, ComboIntensity } from '../types/combo';
 
 const COMBO_PRIORITY: Array<{ threshold: number; kind: ComboKind }> = [

@@ -1,22 +1,36 @@
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import DecimalImport, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+
+// Normalize Decimal constructor/function across SSR/ESM interop.
+// Some bundlers may wrap default export; ensure we always have a callable/constructable.
+const Decimal: any = (DecimalImport as any).fromValue ? DecimalImport : (DecimalImport as any).Decimal || DecimalImport;
+
+export default Decimal;
 
 /**
  * Convert a number, string, or Decimal to a Decimal instance
  */
 export function toDecimal(value: number | string | DecimalType): DecimalType {
-  if (value instanceof Decimal) {
-    return value;
+  if (value && typeof value === 'object' && (value as any).constructor?.name === 'Decimal') {
+    return value as DecimalType;
   }
-  return new Decimal(value);
+  try {
+    return new Decimal(value as any);
+  } catch {
+    return (Decimal as any)(value as any);
+  }
 }
 
 /**
  * Safely parse a string to Decimal, returning fallback on error
  */
-export function fromDecimalString(str: string | undefined, fallback: DecimalType = new Decimal(0)): DecimalType {
+export function fromDecimalString(str: string | undefined, fallback: DecimalType = toDecimal(0)): DecimalType {
   if (!str) return fallback;
   try {
-    return new Decimal(str);
+    try {
+      return new Decimal(str);
+    } catch {
+      return (Decimal as any)(str);
+    }
   } catch (err) {
     console.error('Failed to parse Decimal:', str, err);
     return fallback;
@@ -40,7 +54,7 @@ export function formatDecimal(
   if (style === 'engineering') {
     const exp = decimal.e;
     const engExp = Math.floor(exp / 3) * 3;
-    const mantissa = decimal.div(Decimal.pow(10, engExp));
+    const mantissa = decimal.div((Decimal as any).pow(10, engExp));
     return `${mantissa.toFixed(decimals)}e${engExp}`;
   }
 
@@ -57,7 +71,7 @@ export function formatDecimal(
   }
 
   const suffix = suffixes[tier];
-  const scaled = decimal.div(Decimal.pow(10, tier * 3));
+  const scaled = decimal.div((Decimal as any).pow(10, tier * 3));
   return `${scaled.toFixed(decimals)}${suffix}`;
 }
 

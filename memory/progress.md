@@ -57,4 +57,14 @@
 - Implemented accessibility enhancements to `CreditsDisplay`, updated the header test, and resolved autoroll timer lint/type errors as part of `TASK004`.
 - Completed `TASK004` and ran `npm run test`, `npm run lint`, and `npm run typecheck` to verify the build is green.
 
+### 2025-11-06 (memory verification)
+
+- Performed a source inspection to verify Memory Bank accuracy against the repository implementation. Confirmed and cross-referenced:
+  - `src/App.tsx` (application root and orchestrator of intervals/autosave/autoroll)
+  - `src/utils/decimal.ts` and `src/utils/storage.ts` (Decimal helpers and save/load logic)
+  - `src/utils/constants.ts` (storage key and timing constants)
+  - `src/utils/game-logic.ts` (pure game logic functions referenced by `App`)
+
+- Updated `memory/systemPatterns.md` and `memory/techContext.md` to reflect actual filenames, scripts, and patterns in the codebase.
+
 
