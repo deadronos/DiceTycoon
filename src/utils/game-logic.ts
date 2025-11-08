@@ -10,6 +10,10 @@ import type { ComboResult } from '../types/combo';
 import { rollDie, calculateCost, calculateMultiplier } from './decimal';
 import { createDefaultGameState, createDefaultStats } from './storage';
 import { evaluateAchievements } from './achievements';
+// NOTE: Legacy monolith; core logic is being gradually split into:
+// - game-roll.ts (roll pipeline helpers)
+// - game-prestige.ts (prestige + luck helpers)
+// - game-autoroll.ts (autoroll helpers)
 
 const DecimalMath = Decimal as unknown as {
   log10(value: DecimalType): DecimalType;
