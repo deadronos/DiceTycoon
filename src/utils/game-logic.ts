@@ -260,20 +260,23 @@ export function getLuckMultiplier(state: GameState): DecimalType {
   }
 }
 
+function getRawLuckGain(state: GameState): DecimalType {
+  const credits = state.credits || new Decimal(0);
+  if (credits.lte(0)) return new Decimal(0);
+
+  const log10 = DecimalMath.log10(credits);
+  const base = DecimalMath.max(log10.minus(2), new Decimal(0));
+  const luckBoost = getLuckGainMultiplier(state);
+  // Tuned formula: scales slightly faster; shared by calculateLuckGain + getLuckProgress
+  return base.times(0.6).times(luckBoost);
+}
+
 /**
  * Calculate how many luck points the player would gain on a prestige reset.
- * Formula (MVP): floor( max(log10(totalCredits) - 2, 0) * 0.25 )
  */
 export function calculateLuckGain(state: GameState): DecimalType {
   try {
-    const credits = state.credits || new Decimal(0);
-    // guard: if credits <= 0, return 0
-    if (credits.lte(0)) return new Decimal(0);
-
-    const log10 = DecimalMath.log10(credits);
-    const base = DecimalMath.max(log10.minus(2), new Decimal(0));
-    const luckBoost = getLuckGainMultiplier(state);
-    const rawGain = base.times(0.6).times(luckBoost);
+    const rawGain = getRawLuckGain(state);
     const flooredGain = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
     return DecimalMath.max(flooredGain, new Decimal(0));
   } catch (err) {
@@ -283,15 +286,11 @@ export function calculateLuckGain(state: GameState): DecimalType {
 
 export function getLuckProgress(state: GameState): { progressPercent: number; rawGain: DecimalType; fractional: DecimalType } {
   try {
-    const credits = state.credits || new Decimal(0);
-    if (credits.lte(0)) {
+    const rawGain = getRawLuckGain(state);
+    if (rawGain.lte(0)) {
       return { progressPercent: 0, rawGain: new Decimal(0), fractional: new Decimal(0) };
     }
 
-    const log10 = DecimalMath.log10(credits);
-    const base = DecimalMath.max(log10.minus(2), new Decimal(0));
-    const luckBoost = getLuckGainMultiplier(state);
-    const rawGain = base.times(0.6).times(luckBoost);
     const floored = (rawGain as DecimalType & { floor: () => DecimalType }).floor();
     const fractional = rawGain.minus(floored);
     const percent = Math.max(0, Math.min(1, fractional.toNumber())) * 100;
