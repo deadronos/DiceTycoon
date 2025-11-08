@@ -1,4 +1,4 @@
-import Decimal from '@patashu/break_eternity.js';
+import Decimal from './decimal';
 import {
   type GameState,
   type SerializedGameState,

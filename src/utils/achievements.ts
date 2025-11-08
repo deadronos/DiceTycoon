@@ -1,4 +1,5 @@
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import Decimal from './decimal';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState, AchievementState, GameStats } from '../types/game';
 import type { ComboResult } from '../types/combo';
 

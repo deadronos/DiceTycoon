@@ -1,5 +1,6 @@
 import React from 'react';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+// Decimal creation handled through tooltip math; no direct construction needed here.
 import { formatShort, formatFull } from '../utils/decimal';
 import InfoTooltip from './InfoTooltip';
 
@@ -14,17 +15,17 @@ export const LuckCurrencyDisplay: React.FC<Props> = ({ luckPoints, onOpen }) => 
     <div>
       <div><strong>Prestige Luck</strong></div>
       <div>Every Luck Point adds +2% to your credit gains up to a 10× cap.</div>
-      <div style={{ marginTop: '6px', opacity: 0.8 }}>Luck Points: {formatFull(luckPoints)}</div>
-      <div style={{ marginTop: '4px', opacity: 0.8 }}>Current multiplier: ×{multiplier.toFixed(2)}</div>
+      <div className="tooltip-meta-row">Luck Points: {formatFull(luckPoints)}</div>
+      <div className="tooltip-meta-row tooltip-meta-row--tight">Current multiplier: ×{multiplier.toFixed(2)}</div>
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div className="luck-display-row">
       <button className="btn btn-secondary btn-small" onClick={onOpen} aria-label="Open Prestige Panel">
         ✨ Prestige
       </button>
-      <div style={{ fontSize: '0.9rem', color: 'var(--color-text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className="luck-display-meta">
         Luck: {formatShort(luckPoints)}
         <InfoTooltip content={tooltip} label="Luck details" />
       </div>

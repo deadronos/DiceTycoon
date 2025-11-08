@@ -3,7 +3,6 @@ import { GameState } from './types/game';
 import { CreditsDisplay } from './components/CreditsDisplay';
 import { LuckCurrencyDisplay } from './components/LuckCurrencyDisplay';
 import { PrestigePanel } from './components/PrestigePanel';
-import { DieCard } from './components/DieCard';
 import { RollButton } from './components/RollButton';
 import { AutorollControls } from './components/AutorollControls';
 import { CreditPopup } from './components/CreditPopup';
@@ -11,6 +10,9 @@ import { ComboToast } from './components/ComboToast';
 import { ConfettiBurst } from './components/ConfettiBurst';
 import { ComboHistoryPanel } from './components/ComboHistoryPanel';
 import { AchievementsPanel } from './components/AchievementsPanel';
+import StatsPanel from './components/StatsPanel';
+import SettingsPanel from './components/SettingsPanel';
+import DiceGrid from './components/DiceGrid';
 import {
   createDefaultGameState,
   safeLoad,
@@ -27,19 +29,16 @@ import {
   toggleAutoroll,
   unlockAnimation,
   stopRollingAnimation,
-  getUnlockCost,
-  getLevelUpCost,
   getAutorollUpgradeCost,
-  getAnimationUnlockCost,
-  calculateOfflineProgress,
   calculateLuckGain,
   performPrestigeReset,
   buyPrestigeUpgrade,
   canBuyPrestigeUpgrade,
   getPrestigeUpgradeCost,
 } from './utils/game-logic';
+import { calculateOfflineProgress } from './utils/offline-progress';
 import { canAfford, formatShort, formatFull } from './utils/decimal';
-import Decimal from '@patashu/break_eternity.js';
+import Decimal from './utils/decimal';
 import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, GAME_CONSTANTS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboResult, ComboIntensity } from './types/combo';
@@ -268,21 +267,7 @@ export const App: React.FC = () => {
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = lastComboMetadata?.intensity ?? 'low';
-  const unlockedDiceCount = gameState.dice.filter(d => d.unlocked).length;
-  const totalLevels = gameState.dice.reduce((sum, d) => sum + d.level, 0);
   const totalPrestiges = gameState.prestige?.totalPrestiges ?? 0;
-  const totalCreditsEarned = gameState.stats.totalCreditsEarned;
-  const creditsPerRoll = gameState.totalRolls > 0
-    ? totalCreditsEarned.div(gameState.totalRolls)
-    : new Decimal(0);
-  const recentSampleSize = gameState.stats.recentRolls.length;
-  const averageRecent = recentSampleSize > 0
-    ? gameState.stats.recentRolls.reduce(
-        (sum, value) => sum.plus(new Decimal(value)),
-        new Decimal(0)
-      ).div(recentSampleSize)
-    : new Decimal(0);
-  const bestRoll = gameState.stats.bestRoll;
 
   return (
     <div id="app">
@@ -302,32 +287,12 @@ export const App: React.FC = () => {
 
       <div className="main-layout">
         <div className="dice-section">
-          <div className="dice-grid">
-            {gameState.dice.map(die => {
-              const unlockCost = !die.unlocked ? getUnlockCost(die.id) : undefined;
-              const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
-              const levelUpCost = die.unlocked && !isMaxLevel ? getLevelUpCost(die.level) : undefined;
-              const animationUnlockCost = die.unlocked && die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL
-                ? getAnimationUnlockCost(die.animationLevel)
-                : undefined;
-
-              return (
-                <DieCard
-                  key={die.id}
-                  die={die}
-                  unlockCost={unlockCost}
-                  levelUpCost={levelUpCost}
-                  animationUnlockCost={animationUnlockCost}
-                  onUnlock={() => handleUnlockDie(die.id)}
-                  onLevelUp={() => handleLevelUpDie(die.id)}
-                  onUnlockAnimation={() => handleUnlockAnimation(die.id)}
-                  canUnlock={unlockCost ? canAfford(gameState.credits, unlockCost) : false}
-                  canLevelUp={levelUpCost ? canAfford(gameState.credits, levelUpCost) : false}
-                  canUnlockAnimation={animationUnlockCost ? canAfford(gameState.credits, animationUnlockCost) : false}
-                />
-              );
-            })}
-          </div>
+          <DiceGrid
+            gameState={gameState}
+            onUnlockDie={handleUnlockDie}
+            onLevelUpDie={handleLevelUpDie}
+            onUnlockAnimation={handleUnlockAnimation}
+          />
         </div>
 
         <div className="controls-panel glass-card">
@@ -346,70 +311,13 @@ export const App: React.FC = () => {
             onUpgrade={handleUpgradeAutoroll}
           />
 
-          <div className="stats-section glass-card">
-            <h3>📊 Stats</h3>
-            <div className="stat-grid">
-              <div className="stat-item">
-                <div className="stat-label">Unlocked Dice</div>
-                <div className="stat-value">
-                  {unlockedDiceCount} / {gameState.dice.length}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Total Levels</div>
-                <div className="stat-value">{totalLevels}</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Credits / Roll</div>
-                <div className="stat-value" title={formatFull(creditsPerRoll)}>
-                  {formatShort(creditsPerRoll)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Best Roll Ever</div>
-                <div className="stat-value" title={formatFull(bestRoll)}>
-                  {formatShort(bestRoll)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">
-                  Average Roll {recentSampleSize > 0 ? `(last ${recentSampleSize})` : ''}
-                </div>
-                <div className="stat-value" title={formatFull(averageRecent)}>
-                  {recentSampleSize > 0 ? formatShort(averageRecent) : '—'}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Total Credits Earned</div>
-                <div className="stat-value" title={formatFull(totalCreditsEarned)}>
-                  {formatShort(totalCreditsEarned)}
-                </div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-label">Prestiges Performed</div>
-                <div className="stat-value">{totalPrestiges}</div>
-              </div>
-            </div>
-          </div>
+          <StatsPanel gameState={gameState} />
 
           <ComboHistoryPanel comboChain={gameState.stats.comboChain} />
 
           <AchievementsPanel achievements={gameState.achievements} />
 
-          <div className="settings-section glass-card">
-            <h3>⚙️ Settings</h3>
-            <div className="settings-actions">
-              <button className="btn btn-secondary btn-small" onClick={handleExport}>
-                4be Export Save
-              </button>
-              <button className="btn btn-secondary btn-small" onClick={handleImport}>
-                📂 Import Save
-              </button>
-              <button className="btn btn-danger btn-small" onClick={handleReset}>
-                🔄 Reset Game
-              </button>
-            </div>
-          </div>
+          <SettingsPanel onExport={handleExport} onImport={handleImport} onReset={handleReset} />
         </div>
       </div>
 

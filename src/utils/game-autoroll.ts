@@ -1,8 +1,9 @@
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import Decimal from './decimal';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState, GameStats } from '../types/game';
 import { GAME_CONSTANTS } from './constants';
 import { calculateCost } from './decimal';
-import { getAutorollCooldownMultiplier } from './game-logic';
+import { getAutorollCooldownMultiplier } from './game-prestige';
 
 const ensureStats = (stats?: GameStats): GameStats => stats as GameStats;
 

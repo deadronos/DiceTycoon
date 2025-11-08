@@ -1,10 +1,12 @@
-import Decimal, { type Decimal as DecimalType } from '@patashu/break_eternity.js';
+import Decimal from './decimal';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState, ComboChainStats, GameStats } from '../types/game';
 import type { ComboResult } from '../types/combo';
 import { getComboMultiplier } from './combos';
-import { applyPrestigeMultipliers } from './game-logic';
+import { applyPrestigeMultipliers } from './game-prestige';
 import { evaluateAchievements } from './achievements';
 import { createDefaultStats } from './storage';
+import { executeRoll } from './roll-helpers';
 
 const CHAIN_BONUS_STEP = new Decimal(0.1);
 
@@ -117,4 +119,13 @@ export function applyRollOutcome(
     creditsEarned: finalCredits,
     combo,
   };
+}
+
+/**
+ * Perform a roll for all unlocked dice (manual roll entrypoint).
+ */
+export function performRoll(
+  state: GameState
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+  return executeRoll(state, { animate: true });
 }

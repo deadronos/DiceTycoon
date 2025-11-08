@@ -981,6 +981,37 @@ body {
 .tooltip {
   position: relative;
 }
+  /* Generic tooltip meta row styling replacing inline styles */
+  .tooltip-meta-row {
+    margin-top: 6px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+  }
+  .tooltip-meta-row--tight {
+    margin-top: 4px;
+  }
+
+  /* Luck display inline style replacements */
+  .luck-display-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .luck-display-meta {
+    font-size: 0.9rem;
+    color: var(--color-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Progress bars driven by data-width attributes */
+  .luck-progress__fill[data-width] {
+    width: attr(data-width percentage);
+  }
+  .prestige-progress__bar[data-width] {
+    width: attr(data-width percentage);
+  }
 
 .tooltip .tooltiptext {
   visibility: hidden;
