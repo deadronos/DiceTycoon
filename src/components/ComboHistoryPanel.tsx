@@ -33,10 +33,13 @@ export const ComboHistoryPanel: React.FC<ComboHistoryPanelProps> = ({ comboChain
         {comboChain.history.length === 0 ? (
           <div className="combo-history__empty">No combos yet — roll those dice!</div>
         ) : (
-          comboChain.history.map(entry => {
+          comboChain.history.map((entry, index) => {
             const meta = getComboMetadata(entry.combo);
             return (
-              <div key={`${entry.timestamp}-${meta.title}`} className={`combo-history__entry combo-${meta.intensity}`}>
+              <div
+                key={`${entry.timestamp}-${index}`}
+                className={`combo-history__entry combo-${meta.intensity}`}
+              >
                 <div className="combo-history__entry-title">
                   <span>{meta.title}</span>
                   <span className="combo-history__chain">Chain ×{entry.chain}</span>

@@ -1,18 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from './types/game';
-import { CreditsDisplay } from './components/CreditsDisplay';
-import { LuckCurrencyDisplay } from './components/LuckCurrencyDisplay';
 import { PrestigePanel } from './components/PrestigePanel';
-import { RollButton } from './components/RollButton';
-import { AutorollControls } from './components/AutorollControls';
 import { CreditPopup } from './components/CreditPopup';
-import { ComboToast } from './components/ComboToast';
 import { ConfettiBurst } from './components/ConfettiBurst';
-import { ComboHistoryPanel } from './components/ComboHistoryPanel';
-import { AchievementsPanel } from './components/AchievementsPanel';
-import StatsPanel from './components/StatsPanel';
-import SettingsPanel from './components/SettingsPanel';
 import DiceGrid from './components/DiceGrid';
+import AppHeader from './components/app/AppHeader';
+import GameControlPanel from './components/app/GameControlPanel';
+import ComboToastStack, { type ComboToastEntry } from './components/ComboToastStack';
 import {
   createDefaultGameState,
   safeLoad,
@@ -37,11 +31,11 @@ import {
   getPrestigeUpgradeCost,
 } from './utils/game-logic';
 import { calculateOfflineProgress } from './utils/offline-progress';
-import { canAfford, formatShort, formatFull } from './utils/decimal';
+import { canAfford } from './utils/decimal';
 import Decimal from './utils/decimal';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, GAME_CONSTANTS, type PrestigeShopKey } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
-import type { ComboResult, ComboIntensity } from './types/combo';
+import type { ComboIntensity } from './types/combo';
 import './styles.css';
 
 const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
@@ -60,12 +54,7 @@ export const App: React.FC = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
-  const [comboToasts, setComboToasts] = useState<Array<{
-    id: number;
-    combo: ComboResult;
-    metadata: ComboMetadata;
-    visible: boolean;
-  }>>([]);
+  const [comboToasts, setComboToasts] = useState<ComboToastEntry[]>([]);
   const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
   const [showPrestige, setShowPrestige] = useState(false);
@@ -267,23 +256,17 @@ export const App: React.FC = () => {
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = lastComboMetadata?.intensity ?? 'low';
-  const totalPrestiges = gameState.prestige?.totalPrestiges ?? 0;
+  const currentLuck = gameState.prestige?.luckPoints ?? new Decimal(0);
+  const canUpgradeAutoroll = canAfford(gameState.credits, autorollUpgradeCost);
 
   return (
     <div id="app">
-      <header className="header">
-        <h1>🎲 Dice Tycoon</h1>
-          <div className="header-bar">
-            <CreditsDisplay credits={gameState.credits} />
-            <LuckCurrencyDisplay
-              luckPoints={gameState.prestige?.luckPoints ?? new Decimal(0)}
-              onOpen={() => setShowPrestige(true)}
-            />
-          </div>
-        <div className="header-subtitle">
-          Total Rolls: {gameState.totalRolls.toLocaleString()}
-        </div>
-      </header>
+      <AppHeader
+        credits={gameState.credits}
+        luckPoints={currentLuck}
+        totalRolls={gameState.totalRolls}
+        onOpenPrestige={() => setShowPrestige(true)}
+      />
 
       <div className="main-layout">
         <div className="dice-section">
@@ -295,30 +278,20 @@ export const App: React.FC = () => {
           />
         </div>
 
-        <div className="controls-panel glass-card">
-          <RollButton
-            onRoll={handleRoll}
-            disabled={isAnyDieRolling}
-            isRolling={isAnyDieRolling}
-          />
-
-          <AutorollControls
-            autoroll={gameState.autoroll}
-            upgradeCost={autorollUpgradeCost}
-            canUpgrade={canAfford(gameState.credits, autorollUpgradeCost)}
-            sessionStats={gameState.stats.autoroll}
-            onToggle={handleToggleAutoroll}
-            onUpgrade={handleUpgradeAutoroll}
-          />
-
-          <StatsPanel gameState={gameState} />
-
-          <ComboHistoryPanel comboChain={gameState.stats.comboChain} />
-
-          <AchievementsPanel achievements={gameState.achievements} />
-
-          <SettingsPanel onExport={handleExport} onImport={handleImport} onReset={handleReset} />
-        </div>
+        <GameControlPanel
+          isAnyDieRolling={isAnyDieRolling}
+          onRoll={handleRoll}
+          autoroll={gameState.autoroll}
+          autorollUpgradeCost={autorollUpgradeCost}
+          canUpgradeAutoroll={canUpgradeAutoroll}
+          sessionStats={gameState.stats.autoroll}
+          onToggleAutoroll={handleToggleAutoroll}
+          onUpgradeAutoroll={handleUpgradeAutoroll}
+          gameState={gameState}
+          onExport={handleExport}
+          onImport={handleImport}
+          onReset={handleReset}
+        />
       </div>
 
       {showPopup && (
@@ -329,17 +302,7 @@ export const App: React.FC = () => {
       )}
       <ConfettiBurst trigger={confettiTrigger} intensity={confettiIntensity} />
       {comboToasts.length > 0 && (
-        <div className="combo-toast-stack" aria-live="polite" aria-relevant="additions text">
-          {comboToasts.map(toast => (
-            <ComboToast
-              key={toast.id}
-              combo={toast.combo}
-              metadata={toast.metadata}
-              visible={toast.visible}
-              onClose={() => handleComboToastClose(toast.id)}
-            />
-          ))}
-        </div>
+        <ComboToastStack comboToasts={comboToasts} onClose={handleComboToastClose} />
       )}
       <PrestigePanel
         visible={showPrestige}
@@ -352,7 +315,7 @@ export const App: React.FC = () => {
           setShowPrestige(false);
         }}
         luckGain={calculateLuckGain(gameState)}
-        currentLuck={gameState.prestige?.luckPoints ?? new Decimal(0)}
+        currentLuck={currentLuck}
         gameState={gameState}
         onBuyUpgrade={handleBuyPrestigeUpgrade}
         canBuyUpgrade={canBuyPrestigeUpgrade}
