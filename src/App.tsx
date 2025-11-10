@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameState } from './types/game';
 import { PrestigePanel } from './components/PrestigePanel';
 import { CreditPopup } from './components/CreditPopup';
@@ -33,12 +33,20 @@ import {
 import { calculateOfflineProgress } from './utils/offline-progress';
 import { canAfford } from './utils/decimal';
 import Decimal from './utils/decimal';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './utils/constants';
+import type { Decimal as DecimalType } from '@patashu/break_eternity.js';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey, CREDIT_POPUP_DURATION } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
-import type { ComboIntensity } from './types/combo';
+import type { ComboIntensity, ComboResult } from './types/combo';
 import './styles.css';
+import { createAutorollBatchRunner, type AutorollBatchOutcome, type AutorollBatchRunner } from './utils/autorollBatchRunner';
+import { createBatchAnimationPlan } from './utils/autorollBatchAnimations';
+import { AUTOROLL_BATCH_MIN_TICK_MS } from './utils/constants';
+import type { AutorollState } from './types/game';
 
 const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
+const BATCH_POPUP_SPACING = CREDIT_POPUP_DURATION + 150;
+const COMBO_THROTTLE_MS = 400;
+const COMBO_BATCH_WINDOW_MS = 500;
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -54,6 +62,7 @@ export const App: React.FC = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
+  const [popupRollCount, setPopupRollCount] = useState<number | null>(null);
   const [comboToasts, setComboToasts] = useState<ComboToastEntry[]>([]);
   const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
@@ -61,6 +70,14 @@ export const App: React.FC = () => {
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
   const comboToastTimersRef = useRef<Map<number, number>>(new Map());
+  const batchAnimationTimersRef = useRef<number[]>([]);
+  const autorollBatchRunnerRef = useRef<AutorollBatchRunner | null>(null);
+  const gameStateRef = useRef<GameState>(gameState);
+  const batchCompleteRef = useRef<(outcomes: AutorollBatchOutcome[], state: GameState) => void>(() => {});
+  const lastComboEmitTimeRef = useRef<number>(0);
+  const accumulatedCombosRef = useRef<ComboResult[]>([]);
+  const comboBatchTimerRef = useRef<number | null>(null);
+  const emitCombosWithThrottleRef = useRef<((combos: ComboResult[]) => void) | null>(null);
 
   // Save game state
   const saveGame = useCallback(() => {
@@ -88,6 +105,23 @@ export const App: React.FC = () => {
         window.clearTimeout(timerId);
       });
       timers.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => () => {
+    batchAnimationTimersRef.current.forEach(timerId => window.clearTimeout(timerId));
+    batchAnimationTimersRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (comboBatchTimerRef.current) {
+        window.clearTimeout(comboBatchTimerRef.current);
+      }
     };
   }, []);
 
@@ -126,31 +160,126 @@ export const App: React.FC = () => {
     }, 320);
   }, []);
 
+  const clearBatchAnimationTimers = useCallback(() => {
+    batchAnimationTimersRef.current.forEach(timerId => window.clearTimeout(timerId));
+    batchAnimationTimersRef.current = [];
+  }, []);
+
+  const emitCombosWithThrottle = useCallback((combos: ComboResult[]) => {
+    if (combos.length === 0) return;
+    
+    const now = Date.now();
+    const elapsed = now - lastComboEmitTimeRef.current;
+    
+    // If throttle window not met, accumulate and schedule batch emission
+    if (elapsed < COMBO_THROTTLE_MS) {
+      accumulatedCombosRef.current.push(...combos);
+      
+      if (comboBatchTimerRef.current) {
+        window.clearTimeout(comboBatchTimerRef.current);
+      }
+      
+      comboBatchTimerRef.current = window.setTimeout(() => {
+        if (emitCombosWithThrottleRef.current && accumulatedCombosRef.current.length > 0) {
+          emitCombosWithThrottleRef.current(accumulatedCombosRef.current);
+        }
+        accumulatedCombosRef.current = [];
+        comboBatchTimerRef.current = null;
+      }, COMBO_BATCH_WINDOW_MS);
+      
+      return;
+    }
+    
+    lastComboEmitTimeRef.current = now;
+    
+    // Create summary toast if multiple combos
+    const primaryCombo = combos[0];
+    const isSummary = combos.length > 1;
+    const metadata = getComboMetadata(primaryCombo);
+    const timestamp = now + Math.random();
+    
+    setComboToasts(prev => {
+      const next = [
+        {
+          id: timestamp,
+          combo: primaryCombo,
+          metadata,
+          visible: true,
+          summaryCount: isSummary ? combos.length : undefined,
+        },
+        ...prev.filter(toast => toast.id !== timestamp),
+      ];
+      return next.slice(0, 3);
+    });
+    
+    const timerId = window.setTimeout(() => {
+      handleComboToastClose(timestamp);
+    }, COMBO_TOAST_AUTO_DISMISS_MS);
+    comboToastTimersRef.current.set(timestamp, timerId);
+    setLastComboMetadata(metadata);
+    setConfettiTrigger(timestamp);
+  }, [handleComboToastClose]);
+
+  // Store reference to function for recursive calls
+  useEffect(() => {
+    emitCombosWithThrottleRef.current = emitCombosWithThrottle;
+  }, [emitCombosWithThrottle]);
+
+  const emitComboForOutcome = useCallback((combo: ComboResult) => {
+    emitCombosWithThrottle([combo]);
+  }, [emitCombosWithThrottle]);
+
+  const showRollFeedback = useCallback((outcome: AutorollBatchOutcome, rollCount: number | null = null) => {
+    setPopupCredits(outcome.creditsEarned);
+    setPopupRollCount(rollCount);
+    setShowPopup(true);
+    if (outcome.combo) {
+      emitComboForOutcome(outcome.combo);
+    }
+  }, [emitComboForOutcome]);
+
+  const scheduleBatchOutcome = useCallback((outcome: AutorollBatchOutcome, delay: number) => {
+    const timerId = window.setTimeout(() => showRollFeedback(outcome), delay);
+    batchAnimationTimersRef.current.push(timerId);
+  }, [showRollFeedback]);
+
+  const scheduleAggregatedPopup = useCallback((credits: DecimalType, rolls: number, delay: number) => {
+    const timerId = window.setTimeout(() => {
+      showRollFeedback({ creditsEarned: credits, combo: null }, rolls);
+    }, delay);
+    batchAnimationTimersRef.current.push(timerId);
+  }, [showRollFeedback]);
+
+  const emitSampledAnimations = useCallback((outcomes: AutorollBatchOutcome[], animationBudget: number) => {
+    clearBatchAnimationTimers();
+    const plan = createBatchAnimationPlan(outcomes, animationBudget);
+    plan.sampled.forEach((outcome, index) => {
+      const delay = index * BATCH_POPUP_SPACING;
+      scheduleBatchOutcome(outcome, delay);
+    });
+    if (plan.remainder.length > 0) {
+      const delay = plan.sampled.length * BATCH_POPUP_SPACING + 100;
+      scheduleAggregatedPopup(plan.aggregatedCredits, plan.remainder.length, delay);
+    }
+  }, [clearBatchAnimationTimers, scheduleBatchOutcome, scheduleAggregatedPopup]);
+
+  const handlePopupComplete = useCallback(() => {
+    setShowPopup(false);
+    setPopupRollCount(null);
+  }, []);
+
+  const stopLegacyAutorollInterval = useCallback(() => {
+    if (autorollIntervalRef.current) {
+      window.clearInterval(autorollIntervalRef.current);
+      autorollIntervalRef.current = null;
+    }
+  }, []);
+
   // Handle roll
   const handleRoll = useCallback(() => {
     setGameState(prevState => {
       const { newState, creditsEarned, combo } = performRoll(prevState);
-
-      setPopupCredits(creditsEarned);
-      setShowPopup(true);
-
-      if (combo) {
-        const timestamp = Date.now() + Math.random();
-        const metadata = getComboMetadata(combo);
-        setComboToasts(prev => {
-          const next = [
-            { id: timestamp, combo, metadata, visible: true },
-            ...prev.filter(toast => toast.id !== timestamp),
-          ];
-          return next.slice(0, 3);
-        });
-        const timerId = window.setTimeout(() => {
-          handleComboToastClose(timestamp);
-        }, COMBO_TOAST_AUTO_DISMISS_MS);
-        comboToastTimersRef.current.set(timestamp, timerId);
-        setLastComboMetadata(metadata);
-        setConfettiTrigger(timestamp);
-      }
+      showRollFeedback({ creditsEarned, combo });
 
       setTimeout(() => {
         setGameState(prev => stopRollingAnimation(prev));
@@ -158,28 +287,81 @@ export const App: React.FC = () => {
 
       return newState;
     });
-  }, [handleComboToastClose]);
+  }, [showRollFeedback]);
+
+  const handleBatchComplete = useCallback((outcomes: AutorollBatchOutcome[], finalState: GameState) => {
+    setGameState(finalState);
+    emitSampledAnimations(outcomes, finalState.autoroll.animationBudget);
+  }, [emitSampledAnimations]);
+
+  useEffect(() => {
+    batchCompleteRef.current = handleBatchComplete;
+  }, [handleBatchComplete]);
+
+  useEffect(() => {
+    const runner = createAutorollBatchRunner({
+      getState: () => gameStateRef.current,
+      performRoll,
+      handlers: {
+        onBatchComplete: (outcomes, finalState) => batchCompleteRef.current(outcomes, finalState),
+      },
+      config: {
+        maxRollsPerTick: gameStateRef.current.autoroll.maxRollsPerTick,
+        minTickMs: AUTOROLL_BATCH_MIN_TICK_MS,
+      },
+    });
+    autorollBatchRunnerRef.current = runner;
+    return () => runner.stop();
+  }, []);
+
+  useEffect(() => {
+    autorollBatchRunnerRef.current?.updateConfig({
+      maxRollsPerTick: gameState.autoroll.maxRollsPerTick,
+    });
+  }, [gameState.autoroll.maxRollsPerTick]);
 
   // Handle autoroll
+  const shouldUseBatching = useMemo(() => {
+    if (!gameState.autoroll.dynamicBatch) return false;
+    const cooldownMs = gameState.autoroll.cooldown.toNumber() * 1000;
+    return cooldownMs > 0 && cooldownMs < gameState.autoroll.batchThresholdMs;
+  }, [
+    gameState.autoroll.dynamicBatch,
+    gameState.autoroll.cooldown,
+    gameState.autoroll.batchThresholdMs,
+  ]);
+
   useEffect(() => {
-    if (gameState.autoroll.enabled && gameState.autoroll.level > 0) {
-      const cooldownMs = gameState.autoroll.cooldown.toNumber() * 1000;
+    const runner = autorollBatchRunnerRef.current;
+    if (!gameState.autoroll.enabled || gameState.autoroll.level === 0) {
+      stopLegacyAutorollInterval();
+      runner?.stop();
+      return;
+    }
+
+    if (shouldUseBatching) {
+      stopLegacyAutorollInterval();
+      runner?.start();
+    } else {
+      runner?.stop();
+      stopLegacyAutorollInterval();
+      const cooldownMs = Math.max(gameState.autoroll.cooldown.toNumber() * 1000, 32);
       autorollIntervalRef.current = window.setInterval(() => {
         handleRoll();
       }, cooldownMs);
-    } else {
-      if (autorollIntervalRef.current) {
-        clearInterval(autorollIntervalRef.current);
-        autorollIntervalRef.current = null;
-      }
     }
 
     return () => {
-      if (autorollIntervalRef.current) {
-        clearInterval(autorollIntervalRef.current);
-      }
+      stopLegacyAutorollInterval();
     };
-  }, [gameState.autoroll.enabled, gameState.autoroll.level, gameState.autoroll.cooldown, handleRoll]);
+  }, [
+    shouldUseBatching,
+    gameState.autoroll.enabled,
+    gameState.autoroll.level,
+    gameState.autoroll.cooldown,
+    handleRoll,
+    stopLegacyAutorollInterval,
+  ]);
 
   // Handle unlock die
   const handleUnlockDie = useCallback((dieId: number) => {
@@ -217,6 +399,32 @@ export const App: React.FC = () => {
   const handleToggleAutoroll = useCallback(() => {
     setGameState(toggleAutoroll(gameState));
   }, [gameState]);
+
+  const updateAutorollSettings = useCallback((updates: Partial<AutorollState>) => {
+    setGameState(prev => ({
+      ...prev,
+      autoroll: {
+        ...prev.autoroll,
+        ...updates,
+      },
+    }));
+  }, []);
+
+  const handleDynamicBatchChange = useCallback((value: boolean) => {
+    updateAutorollSettings({ dynamicBatch: value });
+  }, [updateAutorollSettings]);
+
+  const handleBatchThresholdChange = useCallback((value: number) => {
+    updateAutorollSettings({ batchThresholdMs: Math.max(10, value) });
+  }, [updateAutorollSettings]);
+
+  const handleMaxRollsPerTickChange = useCallback((value: number) => {
+    updateAutorollSettings({ maxRollsPerTick: Math.max(1, value) });
+  }, [updateAutorollSettings]);
+
+  const handleAnimationBudgetChange = useCallback((value: number) => {
+    updateAutorollSettings({ animationBudget: Math.max(0, value) });
+  }, [updateAutorollSettings]);
 
   // Export/Import handlers
   const handleExport = useCallback(() => {
@@ -287,6 +495,10 @@ export const App: React.FC = () => {
           sessionStats={gameState.stats.autoroll}
           onToggleAutoroll={handleToggleAutoroll}
           onUpgradeAutoroll={handleUpgradeAutoroll}
+          onDynamicBatchChange={handleDynamicBatchChange}
+          onBatchThresholdChange={handleBatchThresholdChange}
+          onMaxRollsPerTickChange={handleMaxRollsPerTickChange}
+          onAnimationBudgetChange={handleAnimationBudgetChange}
           gameState={gameState}
           onExport={handleExport}
           onImport={handleImport}
@@ -297,7 +509,8 @@ export const App: React.FC = () => {
       {showPopup && (
         <CreditPopup
           credits={popupCredits}
-          onComplete={() => setShowPopup(false)}
+          rollCount={popupRollCount}
+          onComplete={handlePopupComplete}
         />
       )}
       <ConfettiBurst trigger={confettiTrigger} intensity={confettiIntensity} />

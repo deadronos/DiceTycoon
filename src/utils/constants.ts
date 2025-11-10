@@ -48,6 +48,11 @@ export const GAME_CONSTANTS: GameConstants = {
 
 export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
 export const STORAGE_VERSION = 'v2';
+export const AUTOROLL_BATCH_MIN_TICK_MS = 32;
+export const DEFAULT_AUTOROLL_BATCH_THRESHOLD_MS = 100;
+export const DEFAULT_AUTOROLL_MAX_ROLLS_PER_TICK = 1000;
+export const DEFAULT_AUTOROLL_ANIMATION_BUDGET = 10;
+export const DEFAULT_AUTOROLL_DYNAMIC_BATCH = true;
 
 // Prestige shop item definitions
 export const PRESTIGE_SHOP_ITEMS = {

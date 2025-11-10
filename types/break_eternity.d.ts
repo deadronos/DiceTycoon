@@ -5,6 +5,7 @@ declare module '@patashu/break_eternity.js' {
     toNumber(): number;
     toFixed(decimals: number): string;
     toExponential(decimals: number): string;
+    floor(): DecimalInstance;
     add(n: any): DecimalInstance;
     plus(n: any): DecimalInstance;
     sub(n: any): DecimalInstance;

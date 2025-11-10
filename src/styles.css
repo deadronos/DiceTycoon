@@ -403,6 +403,54 @@ body {
   padding: 15px;
 }
 
+.autoroll-advanced-toggler {
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 0;
+}
+
+.btn-transparent {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color var(--transition-speed);
+}
+
+.btn-transparent:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.autoroll-advanced-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.autoroll-setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+}
+
+.autoroll-setting input[type="number"] {
+  width: 120px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
 .autoroll-header {
   display: flex;
   justify-content: space-between;
@@ -459,6 +507,15 @@ body {
   pointer-events: none;
   z-index: 1000;
   animation: popup-animation 2s ease-out forwards;
+}
+
+.credit-popup__detail {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
 }
 
 @keyframes popup-animation {
@@ -1554,4 +1611,3 @@ body {
 .prestige-panel button:disabled:hover {
   background-color: var(--color-bg-lighter);
 }
-

@@ -15,6 +15,10 @@ export interface AutorollState {
   enabled: boolean;
   level: number;
   cooldown: DecimalType;
+  dynamicBatch: boolean;
+  batchThresholdMs: number;
+  maxRollsPerTick: number;
+  animationBudget: number;
 }
 
 export interface GameSettings {
@@ -70,6 +74,16 @@ export interface SerializedAutorollStats {
   rolls: number;
 }
 
+export interface SerializedAutorollState {
+  enabled: boolean;
+  level: number;
+  cooldown: string;
+  dynamicBatch: boolean;
+  batchThresholdMs: number;
+  maxRollsPerTick: number;
+  animationBudget: number;
+}
+
 export interface SerializedGameStats {
   bestRoll: string;
   bestRollFaces: number[];
@@ -104,7 +118,7 @@ export interface GameState {
 export interface SerializedGameState {
   credits: string;
   dice: Array<Omit<DieState, 'multiplier' | 'cooldown'> & { multiplier: string }>;
-  autoroll: Omit<AutorollState, 'cooldown'> & { cooldown: string };
+  autoroll: SerializedAutorollState;
   settings: GameSettings;
   totalRolls: number;
   lastSaveTimestamp: number;

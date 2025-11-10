@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { safeSave, safeLoad } from '../src/utils/storage';
 import { toDecimal } from '../src/utils/decimal';
+import type { Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 const KEY = 'test-storage-key';
 
@@ -10,7 +11,15 @@ beforeEach(() => {
 
 describe('storage.safeSave / safeLoad', () => {
   it('roundtrips credits and dice multipliers', () => {
-    const state = {
+    interface StorageTestState {
+      credits: DecimalType;
+      dice: Array<{ id: number; multiplier: string }>;
+      autoroll: boolean;
+      cooldownMs: number;
+      autorollLevel: number;
+    }
+
+    const state: StorageTestState = {
       credits: toDecimal('12345'),
       dice: [{ id: 0, multiplier: toDecimal(2).toString() }, { id: 1, multiplier: toDecimal(1.5).toString() }],
       autoroll: true,
@@ -21,11 +30,16 @@ describe('storage.safeSave / safeLoad', () => {
     const loaded = safeLoad(KEY, null);
     expect(loaded).toBeTruthy();
     // safeLoad returns unknown; narrow/cast for tests
-    const l = loaded as any;
-    expect(typeof l.credits.toString).toBe('function');
-    expect(l.credits.toString()).toBe('12345');
-    expect(Array.isArray(l.dice)).toBe(true);
-    expect(l.dice[0].multiplier).toBe('2');
+    interface LoadedCreditsState {
+      credits: DecimalType;
+      dice: Array<{ multiplier: string }>;
+    }
+
+    const parsed = loaded as LoadedCreditsState;
+    expect(typeof parsed.credits.toString).toBe('function');
+    expect(parsed.credits.toString()).toBe('12345');
+    expect(Array.isArray(parsed.dice)).toBe(true);
+    expect(parsed.dice[0].multiplier).toBe('2');
   });
 
   it('returns fallback for missing key', () => {

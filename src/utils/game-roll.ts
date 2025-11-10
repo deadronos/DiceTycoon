@@ -124,8 +124,13 @@ export function applyRollOutcome(
 /**
  * Perform a roll for all unlocked dice (manual roll entrypoint).
  */
+export interface PerformRollOptions {
+  suppressPerRollUI?: boolean;
+}
+
 export function performRoll(
-  state: GameState
+  state: GameState,
+  options: PerformRollOptions = {}
 ): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
-  return executeRoll(state, { animate: true });
+  return executeRoll(state, { animate: !options.suppressPerRollUI });
 }
