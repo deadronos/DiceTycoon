@@ -10,6 +10,10 @@ interface AutorollControlsProps {
   sessionStats: AutorollSessionStats;
   onToggle: () => void;
   onUpgrade: () => void;
+  onDynamicBatchChange?: (value: boolean) => void;
+  onBatchThresholdChange?: (value: number) => void;
+  onMaxRollsPerTickChange?: (value: number) => void;
+  onAnimationBudgetChange?: (value: number) => void;
 }
 
 export const AutorollControls: React.FC<AutorollControlsProps> = ({
@@ -19,6 +23,10 @@ export const AutorollControls: React.FC<AutorollControlsProps> = ({
   sessionStats,
   onToggle,
   onUpgrade,
+  onDynamicBatchChange = () => {},
+  onBatchThresholdChange = () => {},
+  onMaxRollsPerTickChange = () => {},
+  onAnimationBudgetChange = () => {},
 }) => {
   const cooldownSeconds = autoroll.cooldown.toNumber();
   const rollsPerMinute = autoroll.level > 0 ? Math.round((60 / cooldownSeconds) * 10) / 10 : 0;
@@ -47,6 +55,38 @@ export const AutorollControls: React.FC<AutorollControlsProps> = ({
       window.clearInterval(intervalId);
     };
   }, [sessionStats.startedAt]);
+
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
+
+  const cooldownMs = autoroll.cooldown.toNumber() * 1000;
+  const thresholdRatio = cooldownMs > 0 ? autoroll.batchThresholdMs / cooldownMs : 1;
+  const batchPreviewRolls = Math.min(
+    autoroll.maxRollsPerTick,
+    Math.max(1, Math.round(thresholdRatio))
+  );
+
+  const isBatchActive = autoroll.dynamicBatch && cooldownMs > 0 && cooldownMs < autoroll.batchThresholdMs;
+  const displayBatchSize = isBatchActive ? `${batchPreviewRolls} / tick` : '1 (single)';
+
+  const handleDynamicBatchToggle = () => onDynamicBatchChange(!autoroll.dynamicBatch);
+  const handleThresholdInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value);
+    if (!Number.isNaN(next)) {
+      onBatchThresholdChange(next);
+    }
+  };
+  const handleMaxRollsInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value);
+    if (!Number.isNaN(next)) {
+      onMaxRollsPerTickChange(next);
+    }
+  };
+  const handleAnimationBudgetInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value);
+    if (!Number.isNaN(next)) {
+      onAnimationBudgetChange(next);
+    }
+  };
 
   return (
     <div className="autoroll-section glass-card">
@@ -100,11 +140,64 @@ export const AutorollControls: React.FC<AutorollControlsProps> = ({
           </div>
 
           <div className="autoroll-meta">
-            <div>Batch Size: 1</div>
+            <div>Batch Size: {displayBatchSize}</div>
             {activeSeconds !== null && (
               <div>Active for {activeSeconds}s</div>
             )}
           </div>
+
+          <div className="autoroll-advanced-toggler">
+            <button
+              type="button"
+              className="btn btn-transparent"
+              onClick={() => setShowAdvanced(prev => !prev)}
+            >
+              {showAdvanced ? 'Hide advanced settings' : 'Show advanced settings'}
+            </button>
+          </div>
+
+          {showAdvanced && (
+            <div className="autoroll-advanced-settings">
+              <label className="autoroll-setting">
+                <span>Dynamic Batch</span>
+                <input
+                  type="checkbox"
+                  checked={autoroll.dynamicBatch}
+                  onChange={handleDynamicBatchToggle}
+                />
+              </label>
+              <label className="autoroll-setting">
+                <span>Batch Threshold (ms)</span>
+                <input
+                  type="number"
+                  min={10}
+                  step={10}
+                  value={autoroll.batchThresholdMs}
+                  onChange={handleThresholdInput}
+                />
+              </label>
+              <label className="autoroll-setting">
+                <span>Max Rolls / Tick</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={100}
+                  value={autoroll.maxRollsPerTick}
+                  onChange={handleMaxRollsInput}
+                />
+              </label>
+              <label className="autoroll-setting">
+                <span>Animation Budget</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={autoroll.animationBudget}
+                  onChange={handleAnimationBudgetInput}
+                />
+              </label>
+            </div>
+          )}
 
           <button
             className="btn btn-secondary btn-small"

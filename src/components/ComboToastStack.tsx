@@ -8,6 +8,7 @@ export interface ComboToastEntry {
   combo: ComboResult;
   metadata: ComboMetadata;
   visible: boolean;
+  summaryCount?: number;
 }
 
 interface Props {
@@ -23,6 +24,7 @@ export const ComboToastStack: React.FC<Props> = ({ comboToasts, onClose }) => (
         combo={toast.combo}
         metadata={toast.metadata}
         visible={toast.visible}
+        summaryCount={toast.summaryCount}
         onClose={() => onClose(toast.id)}
       />
     ))}

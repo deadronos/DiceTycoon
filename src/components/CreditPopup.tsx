@@ -5,10 +5,11 @@ import { CREDIT_POPUP_DURATION } from '../utils/constants';
 
 interface CreditPopupProps {
   credits: DecimalType;
+  rollCount?: number | null;
   onComplete: () => void;
 }
 
-export const CreditPopup: React.FC<CreditPopupProps> = ({ credits, onComplete }) => {
+export const CreditPopup: React.FC<CreditPopupProps> = ({ credits, rollCount, onComplete }) => {
   useEffect(() => {
     const timer = setTimeout(onComplete, CREDIT_POPUP_DURATION);
     return () => clearTimeout(timer);
@@ -17,6 +18,9 @@ export const CreditPopup: React.FC<CreditPopupProps> = ({ credits, onComplete })
   return (
     <div className="credit-popup">
       +{formatShort(credits)} 💎
+      {typeof rollCount === 'number' && (
+        <div className="credit-popup__detail">({rollCount} rolls)</div>
+      )}
     </div>
   );
 };

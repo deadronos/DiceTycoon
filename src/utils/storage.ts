@@ -7,7 +7,15 @@ import {
   type SerializedGameStats,
   type AchievementState,
 } from '../types/game';
-import { STORAGE_KEY, STORAGE_VERSION, GAME_CONSTANTS } from './constants';
+import {
+  STORAGE_KEY,
+  STORAGE_VERSION,
+  GAME_CONSTANTS,
+  DEFAULT_AUTOROLL_BATCH_THRESHOLD_MS,
+  DEFAULT_AUTOROLL_MAX_ROLLS_PER_TICK,
+  DEFAULT_AUTOROLL_ANIMATION_BUDGET,
+  DEFAULT_AUTOROLL_DYNAMIC_BATCH,
+} from './constants';
 import { fromDecimalString } from './decimal';
 
 /**
@@ -30,6 +38,10 @@ export function serializeGameState(state: GameState): SerializedGameState {
       enabled: state.autoroll.enabled,
       level: state.autoroll.level,
       cooldown: state.autoroll.cooldown.toString(),
+      dynamicBatch: state.autoroll.dynamicBatch,
+      batchThresholdMs: state.autoroll.batchThresholdMs,
+      maxRollsPerTick: state.autoroll.maxRollsPerTick,
+      animationBudget: state.autoroll.animationBudget,
     },
     settings: state.settings,
     totalRolls: state.totalRolls,
@@ -68,6 +80,18 @@ export function deserializeGameState(data: SerializedGameState): GameState {
       enabled: data.autoroll.enabled,
       level: data.autoroll.level,
       cooldown: fromDecimalString(data.autoroll.cooldown, GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN),
+      dynamicBatch: typeof data.autoroll.dynamicBatch === 'boolean'
+        ? data.autoroll.dynamicBatch
+        : DEFAULT_AUTOROLL_DYNAMIC_BATCH,
+      batchThresholdMs: typeof data.autoroll.batchThresholdMs === 'number'
+        ? data.autoroll.batchThresholdMs
+        : DEFAULT_AUTOROLL_BATCH_THRESHOLD_MS,
+      maxRollsPerTick: typeof data.autoroll.maxRollsPerTick === 'number'
+        ? data.autoroll.maxRollsPerTick
+        : DEFAULT_AUTOROLL_MAX_ROLLS_PER_TICK,
+      animationBudget: typeof data.autoroll.animationBudget === 'number'
+        ? data.autoroll.animationBudget
+        : DEFAULT_AUTOROLL_ANIMATION_BUDGET,
     },
     settings: data.settings,
     totalRolls: data.totalRolls,
@@ -274,6 +298,10 @@ export function createDefaultGameState(): GameState {
       enabled: false,
       level: 0,
       cooldown: GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN,
+      dynamicBatch: DEFAULT_AUTOROLL_DYNAMIC_BATCH,
+      batchThresholdMs: DEFAULT_AUTOROLL_BATCH_THRESHOLD_MS,
+      maxRollsPerTick: DEFAULT_AUTOROLL_MAX_ROLLS_PER_TICK,
+      animationBudget: DEFAULT_AUTOROLL_ANIMATION_BUDGET,
     },
     settings: {
       sound: false,
