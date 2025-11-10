@@ -14,17 +14,15 @@ import {
   getLuckGainMultiplier,
 } from '../src/utils/game-logic';
 import { createDefaultGameState } from '../src/utils/storage';
-import { PRESTIGE_SHOP_ITEMS } from '../src/utils/constants';
-import type { PrestigeShopKey } from '../src/utils/constants';
 
 describe('Prestige Shop', () => {
   describe('calculateLuckGain & boosts', () => {
     it('uses base formula when no upgrades are owned', () => {
       const state = createDefaultGameState();
-      state.credits = Decimal.pow(10, 15.8); // yields base 12.8 -> 3.2 luck before floor
+      state.credits = Decimal.pow(10, 15.8); // log10=15.8, (15.8-2)×0.5=6.9 -> floor=6
 
       const gain = calculateLuckGain(state);
-      expect(gain.toNumber()).toBe(3);
+      expect(gain.toNumber()).toBe(6);
     });
 
     it('applies Luck Fabricator multiplier to prestige gains', () => {
@@ -33,7 +31,7 @@ describe('Prestige Shop', () => {
       state.prestige!.shop['luckFabricator'] = 3; // +30%
 
       const gain = calculateLuckGain(state);
-      expect(gain.toNumber()).toBe(4); // 3.2 * 1.3 = 4.16 -> floor 4
+      expect(gain.toNumber()).toBe(8); // 6.9 * 1.3 = 8.97 -> floor 8
     });
 
     it('getLuckGainMultiplier returns 1 when no upgrades and scales linearly', () => {
