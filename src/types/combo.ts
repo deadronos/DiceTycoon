@@ -19,4 +19,12 @@ export interface ComboResult {
   face?: number;
   /** Ordered list of faces involved in the combo, useful for straights/flushes */
   faces?: number[];
+  /** Additional combo detected simultaneously (e.g., two pairs, two triples) */
+  multiCombo?: {
+    kind: ComboKind;
+    count: number;
+    face?: number;
+  };
+  /** Whether this is a multi-combo (grants bonus multiplier) */
+  isMultiCombo?: boolean;
 }

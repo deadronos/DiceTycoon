@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { calculateOfflineProgress } from '../src/utils/offline-progress';
 import Decimal from '../src/utils/decimal';
 import type { GameState } from '../src/types/game';
@@ -12,6 +12,8 @@ const makeState = (): GameState => ({
       level: 1,
       multiplier: new Decimal(1),
       animationLevel: 0,
+      currentFace: 1,
+      isRolling: false,
     },
   ],
   autoroll: {
@@ -20,6 +22,7 @@ const makeState = (): GameState => ({
     cooldown: new Decimal(1),
   },
   lastSaveTimestamp: 0,
+  totalRolls: 0,
   stats: {
     bestRoll: new Decimal(0),
     bestRollFaces: [],
@@ -38,7 +41,15 @@ const makeState = (): GameState => ({
       rolls: 0,
     },
   },
-  achievements: [],
+  achievements: {
+    unlocked: [],
+    newlyUnlocked: [],
+  },
+  settings: {
+    sound: true,
+    formatting: 'suffixed',
+    theme: 'dark',
+  },
 });
 
 describe('offline-progress', () => {

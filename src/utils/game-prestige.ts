@@ -41,11 +41,12 @@ function getRawLuckGain(state: GameState): DecimalType {
   if (credits.lte(0)) return new Decimal(0);
 
   const log10 = DecimalMath.log10(credits);
-  // Test-validated formula: floor(max(log10(credits) - 3, 0) * 0.25 * (1 + 0.10 * LuckFabricatorLevel))
-  // We keep fractional portion for progress display before flooring in calculateLuckGain.
-  const base = DecimalMath.max(log10.minus(3), new Decimal(0));
+  // Updated formula: floor(max(log10(credits) - 2, 0) * 0.5 * (1 + 0.10 * LuckFabricatorLevel))
+  // Changed from -3 to -2 threshold (first prestige at 1,000 instead of 10,000,000)
+  // Increased gain rate from 0.25 to 0.5 for more rewarding prestige cycles
+  const base = DecimalMath.max(log10.minus(2), new Decimal(0));
   const luckBoost = getLuckGainMultiplier(state);
-  return base.times(0.25).times(luckBoost);
+  return base.times(0.5).times(luckBoost);
 }
 
 export function calculateLuckGain(state: GameState): DecimalType {
