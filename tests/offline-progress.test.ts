@@ -7,6 +7,7 @@ import { createDefaultGameState } from '../src/utils/storage';
 const makeState = (): GameState => {
   const state = createDefaultGameState();
   state.credits = new Decimal(0);
+  state.lastSaveTimestamp = 0; // Set to 0 so time diff is meaningful
   state.autoroll.enabled = true;
   state.autoroll.level = 1;
   state.autoroll.cooldown = new Decimal(1);

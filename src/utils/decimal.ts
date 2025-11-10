@@ -23,6 +23,8 @@ const Decimal = ((decimalModule.fromValue ? decimalModule : decimalModule.Decima
 
 const isDecimalLike = (value: unknown): value is DecimalType => {
   if (value == null || typeof value === 'function') return false;
+  // Check if value is an object type that can have properties
+  if (typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
   return (
     'toNumber' in candidate && typeof candidate.toNumber === 'function' &&
