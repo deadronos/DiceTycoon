@@ -17,6 +17,10 @@ interface Props {
   sessionStats: AutorollSessionStats;
   onToggleAutoroll: () => void;
   onUpgradeAutoroll: () => void;
+  onDynamicBatchChange?: (value: boolean) => void;
+  onBatchThresholdChange?: (value: number) => void;
+  onMaxRollsPerTickChange?: (value: number) => void;
+  onAnimationBudgetChange?: (value: number) => void;
   gameState: GameState;
   onExport: () => void;
   onImport: () => void;
@@ -32,6 +36,10 @@ export const GameControlPanel: React.FC<Props> = ({
   sessionStats,
   onToggleAutoroll,
   onUpgradeAutoroll,
+  onDynamicBatchChange = () => {},
+  onBatchThresholdChange = () => {},
+  onMaxRollsPerTickChange = () => {},
+  onAnimationBudgetChange = () => {},
   gameState,
   onExport,
   onImport,
@@ -47,6 +55,10 @@ export const GameControlPanel: React.FC<Props> = ({
       sessionStats={sessionStats}
       onToggle={onToggleAutoroll}
       onUpgrade={onUpgradeAutoroll}
+      onDynamicBatchChange={onDynamicBatchChange}
+      onBatchThresholdChange={onBatchThresholdChange}
+      onMaxRollsPerTickChange={onMaxRollsPerTickChange}
+      onAnimationBudgetChange={onAnimationBudgetChange}
     />
 
     <StatsPanel gameState={gameState} />
