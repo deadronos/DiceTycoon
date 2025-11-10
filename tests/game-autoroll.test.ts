@@ -2,20 +2,15 @@ import { describe, it, expect } from 'vitest';
 import Decimal from '../src/utils/decimal';
 import { getAutorollUpgradeCost, toggleAutoroll } from '../src/utils/game-autoroll';
 import type { GameState } from '../src/types/game';
+import { createDefaultGameState } from '../src/utils/storage';
 
-const baseState: GameState = {
-  credits: new Decimal(1e6),
-  dice: [],
-  autoroll: {
-    enabled: false,
-    level: 1,
-    cooldown: new Decimal(1),
-  },
-  lastSaveTimestamp: 0,
-  // @ts-expect-error minimal stub
-  stats: { autoroll: {} },
-  // @ts-expect-error minimal stub
-  achievements: [],
+const makeState = (): GameState => {
+  const state = createDefaultGameState();
+  state.credits = new Decimal(1e6);
+  state.autoroll.enabled = false;
+  state.autoroll.level = 1;
+  state.autoroll.cooldown = new Decimal(1);
+  return state;
 };
 
 describe('game-autoroll', () => {
@@ -26,7 +21,7 @@ describe('game-autoroll', () => {
   });
 
   it('toggleAutoroll flips enabled when level > 0', () => {
-    const toggled = toggleAutoroll(baseState);
+    const toggled = toggleAutoroll(makeState());
     expect(toggled.autoroll.enabled).toBe(true);
   });
 });

@@ -33,9 +33,10 @@ import {
 import { calculateOfflineProgress } from './utils/offline-progress';
 import { canAfford } from './utils/decimal';
 import Decimal from './utils/decimal';
+import type { Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey, CREDIT_POPUP_DURATION } from './utils/constants';
-import { getComboMetadata, type ComboMetadata, type ComboResult } from './utils/combos';
-import type { ComboIntensity } from './types/combo';
+import { getComboMetadata, type ComboMetadata } from './utils/combos';
+import type { ComboIntensity, ComboResult } from './types/combo';
 import './styles.css';
 import { createAutorollBatchRunner, type AutorollBatchOutcome, type AutorollBatchRunner } from './utils/autorollBatchRunner';
 import { createBatchAnimationPlan } from './utils/autorollBatchAnimations';
@@ -182,7 +183,7 @@ export const App: React.FC = () => {
     batchAnimationTimersRef.current.push(timerId);
   }, [showRollFeedback]);
 
-  const scheduleAggregatedPopup = useCallback((credits: Decimal, rolls: number, delay: number) => {
+  const scheduleAggregatedPopup = useCallback((credits: DecimalType, rolls: number, delay: number) => {
     const timerId = window.setTimeout(() => {
       showRollFeedback({ creditsEarned: credits, combo: null }, rolls);
     }, delay);
@@ -245,7 +246,7 @@ export const App: React.FC = () => {
         onBatchComplete: (outcomes, finalState) => batchCompleteRef.current(outcomes, finalState),
       },
       config: {
-        maxRollsPerTick: gameState.autoroll.maxRollsPerTick,
+        maxRollsPerTick: gameStateRef.current.autoroll.maxRollsPerTick,
         minTickMs: AUTOROLL_BATCH_MIN_TICK_MS,
       },
     });
@@ -299,6 +300,7 @@ export const App: React.FC = () => {
     gameState.autoroll.level,
     gameState.autoroll.cooldown,
     handleRoll,
+    stopLegacyAutorollInterval,
   ]);
 
   // Handle unlock die

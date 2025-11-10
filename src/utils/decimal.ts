@@ -2,7 +2,33 @@ import DecimalImport, { type Decimal as DecimalType } from '@patashu/break_etern
 
 // Normalize Decimal constructor/function across SSR/ESM interop.
 // Some bundlers may wrap default export; ensure we always have a callable/constructable.
-const Decimal: any = (DecimalImport as any).fromValue ? DecimalImport : (DecimalImport as any).Decimal || DecimalImport;
+type DecimalInput = number | string | DecimalType;
+
+type DecimalFactoryStatics = {
+  pow(base: DecimalInput, exponent: number): DecimalType;
+  min(a: DecimalInput, b: DecimalInput): DecimalType;
+  log10(value: DecimalInput): DecimalType;
+};
+
+type DecimalFactory = {
+  new (value?: DecimalInput): DecimalType;
+  (value?: DecimalInput): DecimalType;
+  fromValue?: (value?: DecimalInput) => DecimalType;
+  Decimal?: DecimalFactory;
+} & Partial<DecimalFactoryStatics>;
+
+const decimalModule = DecimalImport as DecimalFactory;
+const Decimal = ((decimalModule.fromValue ? decimalModule : decimalModule.Decimal ?? decimalModule) as
+  DecimalFactory & DecimalFactoryStatics);
+
+const isDecimalLike = (value: unknown): value is DecimalType => {
+  if (value == null || typeof value === 'function') return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    'toNumber' in candidate && typeof candidate.toNumber === 'function' &&
+    'toString' in candidate && typeof candidate.toString === 'function'
+  );
+};
 
 export default Decimal;
 
@@ -10,14 +36,10 @@ export default Decimal;
  * Convert a number, string, or Decimal to a Decimal instance
  */
 export function toDecimal(value: number | string | DecimalType): DecimalType {
-  if (value && typeof value === 'object' && (value as any).constructor?.name === 'Decimal') {
-    return value as DecimalType;
+  if (isDecimalLike(value)) {
+    return value;
   }
-  try {
-    return new Decimal(value as any);
-  } catch {
-    return (Decimal as any)(value as any);
-  }
+  return new Decimal(value as DecimalInput);
 }
 
 /**
@@ -26,11 +48,7 @@ export function toDecimal(value: number | string | DecimalType): DecimalType {
 export function fromDecimalString(str: string | undefined, fallback: DecimalType = toDecimal(0)): DecimalType {
   if (!str) return fallback;
   try {
-    try {
-      return new Decimal(str);
-    } catch {
-      return (Decimal as any)(str);
-    }
+    return new Decimal(str);
   } catch (err) {
     console.error('Failed to parse Decimal:', str, err);
     return fallback;
@@ -54,7 +72,7 @@ export function formatDecimal(
   if (style === 'engineering') {
     const exp = decimal.e;
     const engExp = Math.floor(exp / 3) * 3;
-    const mantissa = decimal.div((Decimal as any).pow(10, engExp));
+    const mantissa = decimal.div(Decimal.pow(10, engExp));
     return `${mantissa.toFixed(decimals)}e${engExp}`;
   }
 
@@ -71,7 +89,7 @@ export function formatDecimal(
   }
 
   const suffix = suffixes[tier];
-  const scaled = decimal.div((Decimal as any).pow(10, tier * 3));
+  const scaled = decimal.div(Decimal.pow(10, tier * 3));
   return `${scaled.toFixed(decimals)}${suffix}`;
 }
 
