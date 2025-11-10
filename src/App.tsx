@@ -45,6 +45,8 @@ import type { AutorollState } from './types/game';
 
 const COMBO_TOAST_AUTO_DISMISS_MS = 3000;
 const BATCH_POPUP_SPACING = CREDIT_POPUP_DURATION + 150;
+const COMBO_THROTTLE_MS = 400;
+const COMBO_BATCH_WINDOW_MS = 500;
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -72,6 +74,10 @@ export const App: React.FC = () => {
   const autorollBatchRunnerRef = useRef<AutorollBatchRunner | null>(null);
   const gameStateRef = useRef<GameState>(gameState);
   const batchCompleteRef = useRef<(outcomes: AutorollBatchOutcome[], state: GameState) => void>(() => {});
+  const lastComboEmitTimeRef = useRef<number>(0);
+  const accumulatedCombosRef = useRef<ComboResult[]>([]);
+  const comboBatchTimerRef = useRef<number | null>(null);
+  const emitCombosWithThrottleRef = useRef<((combos: ComboResult[]) => void) | null>(null);
 
   // Save game state
   const saveGame = useCallback(() => {
@@ -109,6 +115,14 @@ export const App: React.FC = () => {
   useEffect(() => () => {
     batchAnimationTimersRef.current.forEach(timerId => window.clearTimeout(timerId));
     batchAnimationTimersRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (comboBatchTimerRef.current) {
+        window.clearTimeout(comboBatchTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -151,16 +165,53 @@ export const App: React.FC = () => {
     batchAnimationTimersRef.current = [];
   }, []);
 
-  const emitComboForOutcome = useCallback((combo: ComboResult) => {
-    const timestamp = Date.now() + Math.random();
-    const metadata = getComboMetadata(combo);
+  const emitCombosWithThrottle = useCallback((combos: ComboResult[]) => {
+    if (combos.length === 0) return;
+    
+    const now = Date.now();
+    const elapsed = now - lastComboEmitTimeRef.current;
+    
+    // If throttle window not met, accumulate and schedule batch emission
+    if (elapsed < COMBO_THROTTLE_MS) {
+      accumulatedCombosRef.current.push(...combos);
+      
+      if (comboBatchTimerRef.current) {
+        window.clearTimeout(comboBatchTimerRef.current);
+      }
+      
+      comboBatchTimerRef.current = window.setTimeout(() => {
+        if (emitCombosWithThrottleRef.current && accumulatedCombosRef.current.length > 0) {
+          emitCombosWithThrottleRef.current(accumulatedCombosRef.current);
+        }
+        accumulatedCombosRef.current = [];
+        comboBatchTimerRef.current = null;
+      }, COMBO_BATCH_WINDOW_MS);
+      
+      return;
+    }
+    
+    lastComboEmitTimeRef.current = now;
+    
+    // Create summary toast if multiple combos
+    const primaryCombo = combos[0];
+    const isSummary = combos.length > 1;
+    const metadata = getComboMetadata(primaryCombo);
+    const timestamp = now + Math.random();
+    
     setComboToasts(prev => {
       const next = [
-        { id: timestamp, combo, metadata, visible: true },
+        {
+          id: timestamp,
+          combo: primaryCombo,
+          metadata,
+          visible: true,
+          summaryCount: isSummary ? combos.length : undefined,
+        },
         ...prev.filter(toast => toast.id !== timestamp),
       ];
       return next.slice(0, 3);
     });
+    
     const timerId = window.setTimeout(() => {
       handleComboToastClose(timestamp);
     }, COMBO_TOAST_AUTO_DISMISS_MS);
@@ -168,6 +219,15 @@ export const App: React.FC = () => {
     setLastComboMetadata(metadata);
     setConfettiTrigger(timestamp);
   }, [handleComboToastClose]);
+
+  // Store reference to function for recursive calls
+  useEffect(() => {
+    emitCombosWithThrottleRef.current = emitCombosWithThrottle;
+  }, [emitCombosWithThrottle]);
+
+  const emitComboForOutcome = useCallback((combo: ComboResult) => {
+    emitCombosWithThrottle([combo]);
+  }, [emitCombosWithThrottle]);
 
   const showRollFeedback = useCallback((outcome: AutorollBatchOutcome, rollCount: number | null = null) => {
     setPopupCredits(outcome.creditsEarned);
