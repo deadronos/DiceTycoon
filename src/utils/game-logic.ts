@@ -9,5 +9,6 @@ export * from './dice-upgrades';
 export * from './offline-progress';
 export * from './reroll';
 export * from './roll-helpers';
+export * from './ascension';
 
 // (Intentionally no additional logic here.)
