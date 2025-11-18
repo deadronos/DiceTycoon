@@ -4,6 +4,7 @@ import type { GameState } from '../types/game';
 import { PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
 import { createDefaultGameState, createDefaultStats } from './storage';
 import { getAutorollCooldown } from './game-autoroll';
+import { getAscensionCreditBonus } from './ascension';
 
 const DecimalMath = Decimal as unknown as {
   log10(value: DecimalType): DecimalType;
@@ -33,7 +34,10 @@ export function getShopMultiplier(state: GameState): DecimalType {
 }
 
 export function applyPrestigeMultipliers(baseCredits: DecimalType, state: GameState): DecimalType {
-  return baseCredits.times(getLuckMultiplier(state)).times(getShopMultiplier(state));
+  return baseCredits
+    .times(getLuckMultiplier(state))
+    .times(getShopMultiplier(state))
+    .times(getAscensionCreditBonus(state));
 }
 
 function getRawLuckGain(state: GameState): DecimalType {
@@ -104,11 +108,13 @@ export function performPrestigeReset(state: GameState): GameState {
     shop: prevPrestige.shop || {},
     consumables: prevPrestige.consumables || { rerollTokens: 0 },
   };
+  const nextAscension = state.ascension ?? createDefaultGameState().ascension;
 
   return {
     ...defaultState,
     settings: state.settings,
     prestige: newPrestige,
+    ascension: { ...nextAscension, lastTick: Date.now() },
     stats: resetStats,
     achievements: state.achievements,
     lastSaveTimestamp: Date.now(),

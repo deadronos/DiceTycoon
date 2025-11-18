@@ -1611,3 +1611,164 @@ body {
 .prestige-panel button:disabled:hover {
   background-color: var(--color-bg-lighter);
 }
+
+.view-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.view-tab {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(108, 92, 231, 0.12);
+  color: #dfe6ff;
+  border: 1px solid rgba(108, 92, 231, 0.25);
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.view-tab--active {
+  background: linear-gradient(120deg, rgba(108, 92, 231, 0.4), rgba(0, 184, 148, 0.35));
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.view-tab--locked {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.ascension-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ascension-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.ascension-panel__lede {
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+.ascension-panel__summary-card {
+  min-width: 280px;
+  padding: 16px;
+  border: 1px solid rgba(129, 236, 236, 0.28);
+  background: linear-gradient(160deg, rgba(0, 184, 148, 0.18), rgba(108, 92, 231, 0.15));
+}
+
+.ascension-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #dfe6ff;
+}
+
+.ascension-summary-row small {
+  color: rgba(223, 230, 255, 0.7);
+  margin-left: 8px;
+}
+
+.ascension-summary-row--hint {
+  font-size: 0.9rem;
+  color: rgba(223, 230, 255, 0.82);
+}
+
+.ascension-dice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.ascension-die-card {
+  padding: 16px;
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  background: rgba(15, 19, 35, 0.78);
+}
+
+.ascension-die-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ascension-die-card__title {
+  font-weight: 700;
+  color: #dfe6ff;
+}
+
+.ascension-die-card__status {
+  font-size: 0.85rem;
+  color: rgba(223, 230, 255, 0.7);
+}
+
+.ascension-die-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ascension-die-card__row {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(223, 230, 255, 0.85);
+}
+
+.ascension-die-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ascension-focus-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.pill-button {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(108, 92, 231, 0.25);
+  background: rgba(108, 92, 231, 0.1);
+  padding: 8px 12px;
+  color: #dfe6ff;
+  font-weight: 600;
+}
+
+.pill-button--active {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.5), rgba(0, 184, 148, 0.45));
+  border-color: rgba(129, 236, 236, 0.5);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.ascension-panel__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.ascension-panel__metrics {
+  display: flex;
+  gap: 12px;
+}
+
+.ascension-panel__metric {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(129, 236, 236, 0.25);
+  border-radius: 12px;
+  min-width: 140px;
+}

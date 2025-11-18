@@ -6,6 +6,8 @@ import {
   type GameStats,
   type SerializedGameStats,
   type AchievementState,
+  type AscensionState,
+  type SerializedAscensionState,
 } from '../types/game';
 import {
   STORAGE_KEY,
@@ -17,6 +19,7 @@ import {
   DEFAULT_AUTOROLL_DYNAMIC_BATCH,
 } from './constants';
 import { fromDecimalString } from './decimal';
+import { createDefaultAscensionState } from './ascension';
 
 /**
  * Serialize GameState to a JSON-safe format
@@ -57,6 +60,7 @@ export function serializeGameState(state: GameState): SerializedGameState {
           consumables: state.prestige.consumables || { rerollTokens: 0 },
         }
       : undefined,
+    ascension: serializeAscension(state.ascension),
   };
 }
 
@@ -65,6 +69,7 @@ export function serializeGameState(state: GameState): SerializedGameState {
  */
 export function deserializeGameState(data: SerializedGameState): GameState {
   const stats = data.stats ? deserializeStats(data.stats) : createDefaultStats();
+  const ascension = data.ascension ? deserializeAscension(data.ascension) : createDefaultAscensionState();
   return {
     credits: fromDecimalString(data.credits, new Decimal(0)),
     dice: data.dice.map(die => ({
@@ -115,6 +120,7 @@ export function deserializeGameState(data: SerializedGameState): GameState {
           shop: {},
           consumables: { rerollTokens: 0 },
         },
+    ascension,
   };
 }
 
@@ -319,6 +325,39 @@ export function createDefaultGameState(): GameState {
       shop: {},
       consumables: { rerollTokens: 0 },
     },
+    ascension: createDefaultAscensionState(),
+  };
+}
+
+function serializeAscension(state: AscensionState): SerializedAscensionState {
+  return {
+    unlocked: state.unlocked,
+    stardust: state.stardust.toString(),
+    resonance: state.resonance.toString(),
+    dice: state.dice.map(die => ({
+      id: die.id,
+      unlocked: die.unlocked,
+      tier: die.tier,
+      focus: die.focus,
+    })),
+    lastTick: state.lastTick,
+    totalCycles: state.totalCycles,
+  };
+}
+
+function deserializeAscension(data: SerializedAscensionState): AscensionState {
+  return {
+    unlocked: data.unlocked,
+    stardust: fromDecimalString(data.stardust, new Decimal(0)),
+    resonance: fromDecimalString(data.resonance, new Decimal(0)),
+    dice: data.dice.map(die => ({
+      id: die.id,
+      unlocked: die.unlocked,
+      tier: typeof die.tier === 'number' ? die.tier : 0,
+      focus: die.focus,
+    })),
+    lastTick: typeof data.lastTick === 'number' ? data.lastTick : Date.now(),
+    totalCycles: typeof data.totalCycles === 'number' ? data.totalCycles : 0,
   };
 }
 

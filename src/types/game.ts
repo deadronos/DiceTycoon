@@ -11,6 +11,24 @@ export interface DieState {
   isRolling: boolean;
 }
 
+export type AscensionDieFocus = 'stardust' | 'resonance';
+
+export interface AscensionDieState {
+  id: number;
+  unlocked: boolean;
+  tier: number;
+  focus: AscensionDieFocus;
+}
+
+export interface AscensionState {
+  unlocked: boolean;
+  stardust: DecimalType;
+  resonance: DecimalType;
+  dice: AscensionDieState[];
+  lastTick: number;
+  totalCycles: number;
+}
+
 export interface AutorollState {
   enabled: boolean;
   level: number;
@@ -113,6 +131,7 @@ export interface GameState {
       rerollTokens: number;
     };
   };
+  ascension: AscensionState;
 }
 
 export interface SerializedGameState {
@@ -133,7 +152,17 @@ export interface SerializedGameState {
       rerollTokens: number;
     };
   };
+  ascension?: SerializedAscensionState;
   version: string;
+}
+
+export interface SerializedAscensionState {
+  unlocked: boolean;
+  stardust: string;
+  resonance: string;
+  dice: Array<Omit<AscensionDieState, 'tier'> & { tier: number }>;
+  lastTick: number;
+  totalCycles: number;
 }
 
 export interface GameConstants {

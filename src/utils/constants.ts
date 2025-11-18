@@ -17,6 +17,14 @@ export interface PrestigeShopItem {
   getNextEffect?: (level: number) => string;
 }
 
+export interface AscensionConfig {
+  unlockPrestiges: number;
+  baseStardustRate: number;
+  baseResonanceShare: number;
+  tierGrowth: number;
+  unlockCostMultiplier: number;
+}
+
 export const GAME_CONSTANTS: GameConstants = {
   MAX_DICE: 6,
   DIE_FACES: 6,
@@ -44,6 +52,14 @@ export const GAME_CONSTANTS: GameConstants = {
   ANIMATION_UNLOCK_COST: new Decimal(25),
   MAX_ANIMATION_LEVEL: 3,
   MAX_DIE_LEVEL: 100,
+};
+
+export const ASCENSION_CONFIG: AscensionConfig = {
+  unlockPrestiges: 2,
+  baseStardustRate: 0.65,
+  baseResonanceShare: 0.65,
+  tierGrowth: 0.45,
+  unlockCostMultiplier: 12,
 };
 
 export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
