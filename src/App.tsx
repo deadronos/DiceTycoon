@@ -123,8 +123,15 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (!gameState.ascension.unlocked && canUnlockAscension(gameState)) {
-      setGameState(prev => unlockAscension(prev));
-      setActiveView('ascension');
+      // Defer the state updates to the next macrotask to avoid synchronous
+      // setState calls inside an effect which can cause cascading renders.
+      const timeoutId = window.setTimeout(() => {
+        setGameState(prev => unlockAscension(prev));
+        setActiveView('ascension');
+      }, 0);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
     }
   }, [gameState]);
 
