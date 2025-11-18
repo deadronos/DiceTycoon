@@ -38,7 +38,7 @@ export const PrestigeOverview: React.FC<Props> = ({
   const prestigeFormulaTooltip = (
     <div>
       <div><strong>Luck Gain Formula</strong></div>
-      <div>floor(max(log10(credits) − 3, 0) × 0.25 × (1 + 0.10 × Luck Fabricator level))</div>
+      <div>floor(max(log10(credits) − 2, 0) × 0.5 × (1 + 0.10 × Luck Fabricator level))</div>
       <div className="tooltip-meta-row">Current credits: {formatFull(gameState.credits)}</div>
     </div>
   );

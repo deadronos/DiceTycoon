@@ -7,6 +7,7 @@ import DiceGrid from './components/DiceGrid';
 import AppHeader from './components/app/AppHeader';
 import GameControlPanel from './components/app/GameControlPanel';
 import ComboToastStack, { type ComboToastEntry } from './components/ComboToastStack';
+import AscensionPanel from './components/ascension/AscensionPanel';
 import {
   createDefaultGameState,
   safeLoad,
@@ -29,12 +30,19 @@ import {
   buyPrestigeUpgrade,
   canBuyPrestigeUpgrade,
   getPrestigeUpgradeCost,
+  canUnlockAscension,
+  unlockAscension,
+  tickAscension,
+  unlockAscensionDie,
+  upgradeAscensionDie,
+  updateAscensionFocus,
+  getAscensionProduction,
 } from './utils/game-logic';
 import { calculateOfflineProgress } from './utils/offline-progress';
 import { canAfford } from './utils/decimal';
 import Decimal from './utils/decimal';
 import type { Decimal as DecimalType } from '@patashu/break_eternity.js';
-import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey, CREDIT_POPUP_DURATION } from './utils/constants';
+import { ROLL_ANIMATION_DURATION, AUTO_SAVE_INTERVAL, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey, CREDIT_POPUP_DURATION, ASCENSION_CONFIG } from './utils/constants';
 import { getComboMetadata, type ComboMetadata } from './utils/combos';
 import type { ComboIntensity, ComboResult } from './types/combo';
 import './styles.css';
@@ -67,6 +75,7 @@ export const App: React.FC = () => {
   const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
   const [showPrestige, setShowPrestige] = useState(false);
+  const [activeView, setActiveView] = useState<'core' | 'ascension'>('core');
   const autorollIntervalRef = useRef<number | null>(null);
   const autoSaveIntervalRef = useRef<number | null>(null);
   const comboToastTimersRef = useRef<Map<number, number>>(new Map());
@@ -111,6 +120,30 @@ export const App: React.FC = () => {
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  useEffect(() => {
+    if (!gameState.ascension.unlocked && canUnlockAscension(gameState)) {
+      // Defer the state updates to the next macrotask to avoid synchronous
+      // setState calls inside an effect which can cause cascading renders.
+      const timeoutId = window.setTimeout(() => {
+        setGameState(prev => unlockAscension(prev));
+        setActiveView('ascension');
+      }, 0);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (!gameState.ascension.unlocked) return;
+    const interval = window.setInterval(() => {
+      setGameState(prev => tickAscension(prev));
+    }, 1000);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [gameState.ascension.unlocked]);
 
   useEffect(() => () => {
     batchAnimationTimersRef.current.forEach(timerId => window.clearTimeout(timerId));
@@ -461,11 +494,25 @@ export const App: React.FC = () => {
     }
   }, [gameState]);
 
+  const handleUnlockAscensionDie = useCallback((dieId: number) => {
+    setGameState(prev => unlockAscensionDie(prev, dieId) ?? prev);
+  }, []);
+
+  const handleUpgradeAscensionDie = useCallback((dieId: number) => {
+    setGameState(prev => upgradeAscensionDie(prev, dieId) ?? prev);
+  }, []);
+
+  const handleAscensionFocusChange = useCallback((dieId: number, focus: 'stardust' | 'resonance') => {
+    setGameState(prev => updateAscensionFocus(prev, dieId, focus));
+  }, []);
+
   const isAnyDieRolling = gameState.dice.some(d => d.isRolling);
   const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
   const confettiIntensity: ComboIntensity = lastComboMetadata?.intensity ?? 'low';
   const currentLuck = gameState.prestige?.luckPoints ?? new Decimal(0);
   const canUpgradeAutoroll = canAfford(gameState.credits, autorollUpgradeCost);
+  const ascensionUnlocked = gameState.ascension.unlocked;
+  const ascensionProduction = useMemo(() => getAscensionProduction(gameState), [gameState]);
 
   return (
     <div id="app">
@@ -476,35 +523,68 @@ export const App: React.FC = () => {
         onOpenPrestige={() => setShowPrestige(true)}
       />
 
-      <div className="main-layout">
-        <div className="dice-section">
-          <DiceGrid
+      <div className="view-tabs">
+        <button
+          className={activeView === 'core' ? 'view-tab view-tab--active' : 'view-tab'}
+          onClick={() => setActiveView('core')}
+        >
+          Current Run
+        </button>
+        {ascensionUnlocked ? (
+          <button
+            className={activeView === 'ascension' ? 'view-tab view-tab--active' : 'view-tab'}
+            onClick={() => setActiveView('ascension')}
+          >
+            Eclipse Prestige
+          </button>
+        ) : (
+          <button className="view-tab view-tab--locked" disabled>
+            Eclipse Prestige (Prestige {ASCENSION_CONFIG.unlockPrestiges}+)
+          </button>
+        )}
+      </div>
+
+      {activeView === 'core' && (
+        <div className="main-layout">
+          <div className="dice-section">
+            <DiceGrid
+              gameState={gameState}
+              onUnlockDie={handleUnlockDie}
+              onLevelUpDie={handleLevelUpDie}
+              onUnlockAnimation={handleUnlockAnimation}
+            />
+          </div>
+
+          <GameControlPanel
+            isAnyDieRolling={isAnyDieRolling}
+            onRoll={handleRoll}
+            autoroll={gameState.autoroll}
+            autorollUpgradeCost={autorollUpgradeCost}
+            canUpgradeAutoroll={canUpgradeAutoroll}
+            sessionStats={gameState.stats.autoroll}
+            onToggleAutoroll={handleToggleAutoroll}
+            onUpgradeAutoroll={handleUpgradeAutoroll}
+            onDynamicBatchChange={handleDynamicBatchChange}
+            onBatchThresholdChange={handleBatchThresholdChange}
+            onMaxRollsPerTickChange={handleMaxRollsPerTickChange}
+            onAnimationBudgetChange={handleAnimationBudgetChange}
             gameState={gameState}
-            onUnlockDie={handleUnlockDie}
-            onLevelUpDie={handleLevelUpDie}
-            onUnlockAnimation={handleUnlockAnimation}
+            onExport={handleExport}
+            onImport={handleImport}
+            onReset={handleReset}
           />
         </div>
+      )}
 
-        <GameControlPanel
-          isAnyDieRolling={isAnyDieRolling}
-          onRoll={handleRoll}
-          autoroll={gameState.autoroll}
-          autorollUpgradeCost={autorollUpgradeCost}
-          canUpgradeAutoroll={canUpgradeAutoroll}
-          sessionStats={gameState.stats.autoroll}
-          onToggleAutoroll={handleToggleAutoroll}
-          onUpgradeAutoroll={handleUpgradeAutoroll}
-          onDynamicBatchChange={handleDynamicBatchChange}
-          onBatchThresholdChange={handleBatchThresholdChange}
-          onMaxRollsPerTickChange={handleMaxRollsPerTickChange}
-          onAnimationBudgetChange={handleAnimationBudgetChange}
+      {activeView === 'ascension' && ascensionUnlocked && (
+        <AscensionPanel
           gameState={gameState}
-          onExport={handleExport}
-          onImport={handleImport}
-          onReset={handleReset}
+          production={ascensionProduction}
+          onUnlockDie={handleUnlockAscensionDie}
+          onUpgradeDie={handleUpgradeAscensionDie}
+          onFocusChange={handleAscensionFocusChange}
         />
-      </div>
+      )}
 
       {showPopup && (
         <CreditPopup
