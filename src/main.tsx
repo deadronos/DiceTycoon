@@ -7,6 +7,9 @@ if (!root) {
   throw new Error('Root element not found');
 }
 
+/**
+ * Initializes the React application and mounts it to the DOM.
+ */
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <App />

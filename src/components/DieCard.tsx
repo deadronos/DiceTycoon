@@ -4,19 +4,35 @@ import { formatShort, formatFull, calculateMultiplier } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GAME_CONSTANTS } from '../utils/constants';
 
+/**
+ * Props for the DieCard component.
+ */
 interface DieCardProps {
+  /** The die's current state. */
   die: DieState;
+  /** Cost to unlock the die (undefined if already unlocked). */
   unlockCost?: DecimalType;
+  /** Cost to level up the die. */
   levelUpCost?: DecimalType;
+  /** Cost to unlock the next animation. */
   animationUnlockCost?: DecimalType;
+  /** Callback to unlock the die. */
   onUnlock: () => void;
+  /** Callback to level up the die. */
   onLevelUp: () => void;
+  /** Callback to unlock an animation. */
   onUnlockAnimation: () => void;
+  /** Whether the unlock is affordable. */
   canUnlock: boolean;
+  /** Whether the level up is affordable. */
   canLevelUp: boolean;
+  /** Whether the animation unlock is affordable. */
   canUnlockAnimation: boolean;
 }
 
+/**
+ * Renders a single die card with its status, face, and upgrade actions.
+ */
 export const DieCard: React.FC<DieCardProps> = ({
   die,
   unlockCost,

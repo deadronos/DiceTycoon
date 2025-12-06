@@ -2,13 +2,21 @@ import React from 'react';
 import { formatShort } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
+/**
+ * Props for the CreditsDisplay component.
+ */
 interface CreditsDisplayProps {
+  /** The credit amount to display. */
   credits: DecimalType;
+  /** Optional label prefix (defaults to "Current Credits"). */
   label?: string;
 }
 
 const DEFAULT_LABEL = 'Current Credits';
 
+/**
+ * Displays the current credit balance formatted with suffixes.
+ */
 export const CreditsDisplay: React.FC<CreditsDisplayProps> = ({ credits, label }) => {
   const formattedCredits = formatShort(credits);
   const trimmedLabel = label ? label.trim() : '';

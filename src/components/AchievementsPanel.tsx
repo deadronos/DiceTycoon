@@ -2,10 +2,17 @@ import React from 'react';
 import type { AchievementState } from '../types/game';
 import { getAchievementDefinitions } from '../utils/achievements';
 
+/**
+ * Props for the AchievementsPanel.
+ */
 interface AchievementsPanelProps {
+  /** The current achievement state. */
   achievements: AchievementState;
 }
 
+/**
+ * Displays the list of achievements and their unlock status.
+ */
 export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ achievements }) => {
   const definitions = getAchievementDefinitions();
   const newlyUnlocked = new Set(achievements.newlyUnlocked);

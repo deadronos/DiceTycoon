@@ -7,7 +7,9 @@ import { rollDie } from './decimal';
 import { applyRollOutcome } from './game-roll';
 
 /**
- * Internal: clear rolling flag for all dice
+ * Stops rolling animations for all dice in the state.
+ * @param state The current game state.
+ * @returns The game state with rolling flags cleared.
  */
 export function stopRollingAnimation(state: GameState): GameState {
   return {
@@ -17,8 +19,10 @@ export function stopRollingAnimation(state: GameState): GameState {
 }
 
 /**
- * Core single-roll pipeline used by both manual rolls and offline autoroll.
- * Exposed for reuse by offline progress.
+ * Executes a single roll operation, including die rolling, combo detection, and applying outcomes.
+ * @param state The current game state.
+ * @param options Configuration options for the roll (e.g., whether to animate).
+ * @returns The result of the roll (new state, credits earned, combo).
  */
 export function executeRoll(
   state: GameState,

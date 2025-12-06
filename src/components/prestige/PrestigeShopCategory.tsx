@@ -3,13 +3,23 @@ import type { PrestigeShopKey } from '../../utils/constants';
 import { PrestigeShopItemCard } from './PrestigeShopItem';
 import type { PrestigeShopItemPayload } from './PrestigeShopTypes';
 
+/**
+ * Props for the PrestigeShopCategory component.
+ */
 interface Props {
+  /** Title of the shop category. */
   title: string;
+  /** Optional description of the category. */
   description?: string;
+  /** List of items to display in this category. */
   items: PrestigeShopItemPayload[];
+  /** Callback to purchase an upgrade. */
   onBuyUpgrade: (key: PrestigeShopKey) => void;
 }
 
+/**
+ * Renders a section of items within a specific category in the Prestige Shop.
+ */
 export const PrestigeShopCategory: React.FC<Props> = ({ title, description, items, onBuyUpgrade }) => {
   if (items.length === 0) return null;
 

@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { ComboIntensity } from '../types/combo';
 
+/**
+ * Definition of a single confetti particle.
+ */
 interface ConfettiPiece {
   id: string;
   left: string;
@@ -12,8 +15,13 @@ interface ConfettiPiece {
   rotationStart: string;
 }
 
+/**
+ * Props for the ConfettiBurst component.
+ */
 interface ConfettiBurstProps {
+  /** Trigger ID (timestamp or counter) to restart animation. */
   trigger: number | null;
+  /** Intensity level determining confetti count and colors. */
   intensity: ComboIntensity;
 }
 
@@ -38,6 +46,9 @@ const INTENSITY_CONFIG: Record<ComboIntensity, { pieces: number; colors: string[
   },
 };
 
+/**
+ * Renders a burst of confetti particles for visual celebration.
+ */
 export const ConfettiBurst: React.FC<ConfettiBurstProps> = ({ trigger, intensity }) => {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
   const config = INTENSITY_CONFIG[intensity];

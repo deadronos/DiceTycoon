@@ -4,11 +4,19 @@ import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { formatShort, formatFull } from '../utils/decimal';
 import InfoTooltip from './InfoTooltip';
 
+/**
+ * Props for the LuckCurrencyDisplay component.
+ */
 interface Props {
+  /** The current amount of Luck Points. */
   luckPoints: DecimalType;
+  /** Callback to open the prestige panel. */
   onOpen: () => void;
 }
 
+/**
+ * Displays the current Luck Points and provides a button to open the Prestige menu.
+ */
 export const LuckCurrencyDisplay: React.FC<Props> = ({ luckPoints, onOpen }) => {
   const multiplier = Math.min(10, 1 + luckPoints.toNumber() * 0.02);
   const tooltip = (
