@@ -1,10 +1,21 @@
 import type { GameState } from '../types/game';
 import { rollDie } from './decimal';
 
+/**
+ * Gets the number of guaranteed rerolls from the prestige shop.
+ * @param state The current game state.
+ * @returns The number of guaranteed rerolls.
+ */
 export function getGuaranteedRerollLevel(state: GameState): number {
   return state.prestige?.shop?.guaranteedReroll ?? 0;
 }
 
+/**
+ * Applies guaranteed rerolls to the lowest dice faces.
+ * @param state The current game state.
+ * @param rolledFaces The original faces rolled.
+ * @returns Object with the new state (updated die faces) and the new face values.
+ */
 export function applyGuaranteedReroll(
   state: GameState,
   rolledFaces: number[]
@@ -26,6 +37,11 @@ export function applyGuaranteedReroll(
   return { newState: { ...state, dice: newDice }, faces: newFaces };
 }
 
+/**
+ * Consumes a reroll token if available.
+ * @param state The current game state.
+ * @returns The updated game state, or null if no tokens available.
+ */
 export function consumeRerollToken(state: GameState): GameState | null {
   if (!state.prestige || state.prestige.consumables.rerollTokens <= 0) return null;
   return {

@@ -2,10 +2,17 @@ import React from 'react';
 import type { ComboChainStats } from '../types/game';
 import { getComboMetadata } from '../utils/combos';
 
+/**
+ * Props for the ComboHistoryPanel component.
+ */
 interface ComboHistoryPanelProps {
+  /** The current combo chain statistics. */
   comboChain: ComboChainStats;
 }
 
+/**
+ * Displays recent combo history and current chain statistics.
+ */
 export const ComboHistoryPanel: React.FC<ComboHistoryPanelProps> = ({ comboChain }) => {
   const chainBonusPercent = comboChain.current > 1 ? (comboChain.current - 1) * 10 : 0;
 

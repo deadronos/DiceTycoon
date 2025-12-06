@@ -2,29 +2,56 @@ import Decimal from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GameConstants } from '../types/game';
 
+/**
+ * Categories for items in the Prestige Shop.
+ */
 export type PrestigeShopCategory = 'passive' | 'qol' | 'gameplay' | 'consumable' | 'prestige-exclusive';
 
+/**
+ * Defines the structure of a purchasable item in the Prestige Shop.
+ */
 export interface PrestigeShopItem {
+  /** Display name of the item. */
   name: string;
+  /** Description of what the item does. */
   description: string;
+  /** Initial cost in Luck points. */
   baseCost: DecimalType;
+  /** Multiplier for cost increase per level. */
   costGrowth: DecimalType;
+  /** Maximum level attainable (-1 for unlimited). */
   maxLevel: number;
+  /** Category the item belongs to. */
   category: PrestigeShopCategory;
+  /** Emoji icon for the item. */
   icon: string;
+  /** Text description of the effect formula. */
   formula: string;
+  /** Function to get a description of the current effect based on level. */
   getCurrentEffect?: (level: number) => string;
+  /** Function to get a description of the next level's effect. */
   getNextEffect?: (level: number) => string;
 }
 
+/**
+ * Configuration for the Ascension system.
+ */
 export interface AscensionConfig {
+  /** Number of prestiges required to unlock ascension. */
   unlockPrestiges: number;
+  /** Base stardust production rate. */
   baseStardustRate: number;
+  /** Fraction of production allocated to resonance by default. */
   baseResonanceShare: number;
+  /** Growth factor for tier bonuses. */
   tierGrowth: number;
+  /** Multiplier for unlock costs. */
   unlockCostMultiplier: number;
 }
 
+/**
+ * Global game balance constants.
+ */
 export const GAME_CONSTANTS: GameConstants = {
   MAX_DICE: 6,
   DIE_FACES: 6,
@@ -54,6 +81,9 @@ export const GAME_CONSTANTS: GameConstants = {
   MAX_DIE_LEVEL: 100,
 };
 
+/**
+ * Ascension system configuration values.
+ */
 export const ASCENSION_CONFIG: AscensionConfig = {
   unlockPrestiges: 2,
   baseStardustRate: 0.65,
@@ -62,15 +92,24 @@ export const ASCENSION_CONFIG: AscensionConfig = {
   unlockCostMultiplier: 12,
 };
 
+/** Storage key for saving game state to local storage. */
 export const STORAGE_KEY = 'dicetycoon.gamestate.v2';
+/** Current storage version string. */
 export const STORAGE_VERSION = 'v2';
+/** Minimum time between ticks for batch autorolling. */
 export const AUTOROLL_BATCH_MIN_TICK_MS = 32;
+/** Default threshold in ms to switch to batch processing mode. */
 export const DEFAULT_AUTOROLL_BATCH_THRESHOLD_MS = 100;
+/** Default maximum rolls to process per tick in batch mode. */
 export const DEFAULT_AUTOROLL_MAX_ROLLS_PER_TICK = 1000;
+/** Default budget for animations in batch mode. */
 export const DEFAULT_AUTOROLL_ANIMATION_BUDGET = 10;
+/** Default setting for dynamic batching. */
 export const DEFAULT_AUTOROLL_DYNAMIC_BATCH = true;
 
-// Prestige shop item definitions
+/**
+ * Definitions for all items available in the Prestige Shop.
+ */
 export const PRESTIGE_SHOP_ITEMS = {
   multiplier: {
     name: 'Fortune Amplifier',
@@ -152,9 +191,16 @@ export const PRESTIGE_SHOP_ITEMS = {
   },
 } as const satisfies Record<string, PrestigeShopItem>;
 
+/**
+ * Valid keys for looking up prestige shop items.
+ */
 export type PrestigeShopKey = keyof typeof PRESTIGE_SHOP_ITEMS;
 
-export const ROLL_ANIMATION_DURATION = 800; // milliseconds
-export const CREDIT_POPUP_DURATION = 2000; // milliseconds
-export const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
-export const MAX_OFFLINE_TIME = 3600000; // 1 hour in milliseconds
+/** Duration of the dice roll animation in milliseconds. */
+export const ROLL_ANIMATION_DURATION = 800;
+/** Duration of the credit gain popup in milliseconds. */
+export const CREDIT_POPUP_DURATION = 2000;
+/** Interval for auto-saving the game in milliseconds. */
+export const AUTO_SAVE_INTERVAL = 30000;
+/** Maximum offline time to process for progress in milliseconds (1 hour). */
+export const MAX_OFFLINE_TIME = 3600000;

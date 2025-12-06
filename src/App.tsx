@@ -56,6 +56,10 @@ const BATCH_POPUP_SPACING = CREDIT_POPUP_DURATION + 150;
 const COMBO_THROTTLE_MS = 400;
 const COMBO_BATCH_WINDOW_MS = 500;
 
+/**
+ * The root component of the Dice Tycoon application.
+ * Manages the global game state, game loop, and high-level UI orchestration.
+ */
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const loaded = safeLoad();

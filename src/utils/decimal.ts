@@ -35,7 +35,9 @@ const isDecimalLike = (value: unknown): value is DecimalType => {
 export default Decimal;
 
 /**
- * Convert a number, string, or Decimal to a Decimal instance
+ * Convert a number, string, or Decimal to a Decimal instance.
+ * @param value The value to convert.
+ * @returns A Decimal instance.
  */
 export function toDecimal(value: number | string | DecimalType): DecimalType {
   if (isDecimalLike(value)) {
@@ -45,7 +47,10 @@ export function toDecimal(value: number | string | DecimalType): DecimalType {
 }
 
 /**
- * Safely parse a string to Decimal, returning fallback on error
+ * Safely parse a string to Decimal, returning fallback on error.
+ * @param str The string to parse.
+ * @param fallback The fallback value if parsing fails (defaults to 0).
+ * @returns A Decimal instance.
  */
 export function fromDecimalString(str: string | undefined, fallback: DecimalType = toDecimal(0)): DecimalType {
   if (!str) return fallback;
@@ -58,7 +63,10 @@ export function fromDecimalString(str: string | undefined, fallback: DecimalType
 }
 
 /**
- * Format a Decimal for display with suffixes (K, M, B, T, etc.)
+ * Format a Decimal for display with suffixes (K, M, B, T, etc.).
+ * @param value The value to format.
+ * @param options Formatting options (decimals, style).
+ * @returns The formatted string.
  */
 export function formatDecimal(
   value: DecimalType | number | string,
@@ -96,7 +104,9 @@ export function formatDecimal(
 }
 
 /**
- * Format a Decimal as a short display string with adaptive precision
+ * Format a Decimal as a short display string with adaptive precision.
+ * @param value The value to format.
+ * @returns A short string representation.
  */
 export function formatShort(value: DecimalType | number | string): string {
   const decimal = toDecimal(value);
@@ -113,7 +123,9 @@ export function formatShort(value: DecimalType | number | string): string {
 }
 
 /**
- * Format a Decimal with full precision for tooltips
+ * Format a Decimal with full precision for tooltips.
+ * @param value The value to format.
+ * @returns The full string representation.
  */
 export function formatFull(value: DecimalType | number | string): string {
   const decimal = toDecimal(value);
@@ -121,7 +133,10 @@ export function formatFull(value: DecimalType | number | string): string {
 }
 
 /**
- * Compare two Decimal values for sorting
+ * Compare two Decimal values for sorting.
+ * @param a First value.
+ * @param b Second value.
+ * @returns -1 if a < b, 1 if a > b, 0 if equal.
  */
 export function compareDecimals(a: DecimalType, b: DecimalType): number {
   if (a.lt(b)) return -1;
@@ -130,21 +145,30 @@ export function compareDecimals(a: DecimalType, b: DecimalType): number {
 }
 
 /**
- * Check if player can afford a cost
+ * Check if player can afford a cost.
+ * @param credits Current credits available.
+ * @param cost Cost to check against.
+ * @returns True if credits >= cost.
  */
 export function canAfford(credits: DecimalType, cost: DecimalType): boolean {
   return credits.gte(cost);
 }
 
 /**
- * Calculate exponential cost scaling
+ * Calculate exponential cost scaling.
+ * @param baseCost The base cost at level 0/1.
+ * @param growthRate The multiplier per level.
+ * @param level The target level.
+ * @returns The calculated cost.
  */
 export function calculateCost(baseCost: DecimalType, growthRate: DecimalType, level: number): DecimalType {
   return baseCost.times(growthRate.pow(level));
 }
 
 /**
- * Generate a random die face (1-6)
+ * Generate a random die face (1-6).
+ * Uses crypto.getRandomValues if available, otherwise Math.random.
+ * @returns A random integer between 1 and 6.
  */
 export function rollDie(): number {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -157,7 +181,11 @@ export function rollDie(): number {
 }
 
 /**
- * Calculate multiplier based on level
+ * Calculate multiplier based on level.
+ * @param baseMultiplier The starting multiplier.
+ * @param level The current level.
+ * @param multiplierPerLevel The increase per level.
+ * @returns The calculated multiplier.
  */
 export function calculateMultiplier(baseMultiplier: DecimalType, level: number, multiplierPerLevel: DecimalType): DecimalType {
   if (level <= 1) return baseMultiplier;

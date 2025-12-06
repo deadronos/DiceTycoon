@@ -4,8 +4,13 @@ import type { GameState } from '../types/game';
 import type { ComboResult } from '../types/combo';
 import { AUTOROLL_BATCH_MIN_TICK_MS } from './constants';
 
+/**
+ * Represents the result of a single auto-roll within a batch.
+ */
 export interface AutorollBatchOutcome {
+  /** The amount of credits earned in this roll. */
   creditsEarned: DecimalType;
+  /** The combo result achieved in this roll, if any. */
   combo: ComboResult | null;
 }
 
@@ -15,22 +20,52 @@ interface RollResult {
   combo: ComboResult | null;
 }
 
+/**
+ * Configuration options for the auto-roll batch runner.
+ */
 export interface AutorollBatchRunnerConfig {
+  /** Maximum number of rolls to process in a single tick (frame). */
   maxRollsPerTick: number;
+  /** Minimum time in milliseconds between processing ticks. */
   minTickMs: number;
 }
 
+/**
+ * Callback handlers for batch runner events.
+ */
 export interface AutorollBatchRunnerHandlers {
+  /**
+   * Called when a batch of rolls is completed.
+   * @param outcomes The list of outcomes from the batch.
+   * @param finalState The game state after applying all rolls.
+   */
   onBatchComplete: (outcomes: AutorollBatchOutcome[], finalState: GameState) => void;
 }
 
 type PerformRollFn = (state: GameState, options?: { suppressPerRollUI?: boolean }) => RollResult;
 
+/**
+ * Interface for the AutorollBatchRunner.
+ */
 export interface AutorollBatchRunner {
+  /** Starts the auto-roll processing loop. */
   start(): void;
+  /** Stops the auto-roll processing loop. */
   stop(): void;
+  /**
+   * Updates the runner's configuration.
+   * @param config Partial configuration object.
+   */
   updateConfig(config: Partial<AutorollBatchRunnerConfig>): void;
+  /**
+   * Updates the runner's event handlers.
+   * @param handlers Partial handlers object.
+   */
   updateHandlers(handlers: Partial<AutorollBatchRunnerHandlers>): void;
+  /**
+   * Manually triggers a processing tick (useful for testing or custom loops).
+   * @param elapsedMs Optional elapsed time since last tick; calculates automatically if omitted.
+   */
   processTick(elapsedMs?: number): void;
 }
 
@@ -41,6 +76,11 @@ interface AutorollBatchRunnerParams {
   config: AutorollBatchRunnerConfig;
 }
 
+/**
+ * Creates a new instance of an AutorollBatchRunner.
+ * @param params Initialization parameters.
+ * @returns A new AutorollBatchRunner instance.
+ */
 export function createAutorollBatchRunner(params: AutorollBatchRunnerParams): AutorollBatchRunner {
   return new AutorollBatchRunnerImpl(params);
 }

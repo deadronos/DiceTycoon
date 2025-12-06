@@ -7,6 +7,11 @@ import { getAutorollCooldownMultiplier } from './game-prestige';
 
 const ensureStats = (stats?: GameStats): GameStats => stats as GameStats;
 
+/**
+ * Calculates the cost to upgrade the auto-roller.
+ * @param currentLevel The current level of the auto-roller.
+ * @returns The cost in credits.
+ */
 export function getAutorollUpgradeCost(currentLevel: number): DecimalType {
   if (currentLevel === 0) {
     return GAME_CONSTANTS.AUTOROLL_UNLOCK_COST;
@@ -18,6 +23,11 @@ export function getAutorollUpgradeCost(currentLevel: number): DecimalType {
   );
 }
 
+/**
+ * Calculates the cooldown duration for the auto-roller.
+ * @param level The current level of the auto-roller.
+ * @returns The cooldown in seconds.
+ */
 export function getAutorollCooldown(level: number): DecimalType {
   if (level === 0) return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN;
   return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
@@ -41,6 +51,11 @@ function stopAutorollSession(stats: GameStats) {
   };
 }
 
+/**
+ * Attempts to upgrade the auto-roller.
+ * @param state The current game state.
+ * @returns The updated game state, or null if failed.
+ */
 export function upgradeAutoroll(state: GameState): GameState | null {
   const cost = getAutorollUpgradeCost(state.autoroll.level);
   if (state.credits.lt(cost)) return null;
@@ -71,6 +86,11 @@ export function upgradeAutoroll(state: GameState): GameState | null {
   };
 }
 
+/**
+ * Toggles the auto-roller on or off.
+ * @param state The current game state.
+ * @returns The updated game state.
+ */
 export function toggleAutoroll(state: GameState): GameState {
   if (state.autoroll.level === 0) return state;
 

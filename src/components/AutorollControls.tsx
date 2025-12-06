@@ -3,19 +3,35 @@ import { AutorollState, AutorollSessionStats } from '../types/game';
 import { formatShort, formatFull } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
+/**
+ * Props for the AutorollControls component.
+ */
 interface AutorollControlsProps {
+  /** The current autoroll configuration and state. */
   autoroll: AutorollState;
+  /** Cost to upgrade the autoroll feature. */
   upgradeCost: DecimalType;
+  /** Whether the upgrade is affordable. */
   canUpgrade: boolean;
+  /** Current session statistics for autoroll. */
   sessionStats: AutorollSessionStats;
+  /** Callback to toggle autoroll on/off. */
   onToggle: () => void;
+  /** Callback to purchase an upgrade. */
   onUpgrade: () => void;
+  /** Callback to update dynamic batching setting. */
   onDynamicBatchChange?: (value: boolean) => void;
+  /** Callback to update batch threshold setting. */
   onBatchThresholdChange?: (value: number) => void;
+  /** Callback to update max rolls per tick setting. */
   onMaxRollsPerTickChange?: (value: number) => void;
+  /** Callback to update animation budget setting. */
   onAnimationBudgetChange?: (value: number) => void;
 }
 
+/**
+ * Interface for controlling the auto-roller, including upgrades and configuration.
+ */
 export const AutorollControls: React.FC<AutorollControlsProps> = ({
   autoroll,
   upgradeCost,

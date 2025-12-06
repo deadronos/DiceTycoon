@@ -7,19 +7,35 @@ import PrestigeShopSection from './prestige/PrestigeShopSection';
 import PrestigeConsumablesSection from './prestige/PrestigeConsumablesSection';
 import { PrestigeOverview } from './prestige/PrestigeOverview';
 
+/**
+ * Props for the PrestigePanel component.
+ */
 interface Props {
+  /** Whether the panel is visible. */
   visible: boolean;
+  /** Callback to close the panel. */
   onClose: () => void;
+  /** Callback to confirm prestige reset. */
   onConfirm: () => void;
+  /** Amount of Luck Points to be gained. */
   luckGain: DecimalType;
+  /** Current Luck Points balance. */
   currentLuck: DecimalType;
+  /** The full game state. */
   gameState: GameState;
+  /** Callback to purchase a shop upgrade. */
   onBuyUpgrade: (key: PrestigeShopKey) => void;
+  /** Function to check if an upgrade is affordable. */
   canBuyUpgrade: (state: GameState, key: PrestigeShopKey) => boolean;
+  /** Function to calculate upgrade cost. */
   getUpgradeCost: (key: PrestigeShopKey, level: number) => DecimalType;
+  /** Dictionary of shop items. */
   shopItems: Record<PrestigeShopKey, PrestigeShopItem>;
 }
 
+/**
+ * The main modal for the Prestige system, containing the overview, shop, and consumables tabs.
+ */
 export const PrestigePanel: React.FC<Props> = ({
   visible,
   onClose,

@@ -4,14 +4,25 @@ import type { PrestigeShopItem, PrestigeShopKey } from '../../utils/constants';
 import { InfoTooltip } from '../InfoTooltip';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
+/**
+ * Props for the PrestigeConsumablesSection component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
+  /** Dictionary of all shop items. */
   shopItems: Record<PrestigeShopKey, PrestigeShopItem>;
+  /** Function to check if an upgrade is affordable. */
   canBuyUpgrade: (state: GameState, key: PrestigeShopKey) => boolean;
+  /** Function to calculate the cost of an upgrade. */
   getUpgradeCost: (key: PrestigeShopKey, level: number) => DecimalType;
+  /** Callback to purchase an upgrade. */
   onBuyUpgrade: (key: PrestigeShopKey) => void;
 }
 
+/**
+ * Renders the consumables section of the Prestige Shop.
+ */
 export const PrestigeConsumablesSection: React.FC<Props> = ({
   gameState,
   shopItems,

@@ -2,14 +2,25 @@ import React from 'react';
 import type { ComboResult } from '../types/combo';
 import { getComboMetadata, type ComboMetadata } from '../utils/combos';
 
+/**
+ * Props for the ComboToast component.
+ */
 interface ComboToastProps {
+  /** The combo result to display. */
   combo: ComboResult | null;
+  /** Optional pre-calculated metadata. */
   metadata?: ComboMetadata | null;
+  /** Whether the toast is currently visible. */
   visible: boolean;
+  /** Callback to close the toast. */
   onClose: () => void;
+  /** If grouped, the count of combos represented. */
   summaryCount?: number;
 }
 
+/**
+ * A notification toast displayed when a combo is achieved.
+ */
 export const ComboToast: React.FC<ComboToastProps> = ({ combo, metadata, visible, onClose, summaryCount }) => {
   if (!combo) return null;
 

@@ -3,7 +3,10 @@ import { stopRollingAnimation } from './roll-helpers';
 import { executeRoll } from './roll-helpers';
 
 /**
- * Calculate offline progress using the same roll pipeline as manual rolls.
+ * Calculates and applies offline progress based on time passed since last save.
+ * @param state The current game state.
+ * @param currentTime The current timestamp.
+ * @returns The updated game state with offline progress applied.
  */
 export function calculateOfflineProgress(state: GameState, currentTime: number): GameState {
   if (!state.autoroll.enabled || state.autoroll.level === 0) {
