@@ -3,12 +3,21 @@ import { formatShort } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { CREDIT_POPUP_DURATION } from '../utils/constants';
 
+/**
+ * Props for the CreditPopup component.
+ */
 interface CreditPopupProps {
+  /** The amount of credits earned. */
   credits: DecimalType;
+  /** Optional roll count context (unused visually but part of interface). */
   rollCount?: number | null;
+  /** Callback when popup duration ends. */
   onComplete: () => void;
 }
 
+/**
+ * A floating popup showing credits earned from a roll.
+ */
 export const CreditPopup: React.FC<CreditPopupProps> = ({ credits, rollCount, onComplete }) => {
   useEffect(() => {
     const timer = setTimeout(onComplete, CREDIT_POPUP_DURATION);

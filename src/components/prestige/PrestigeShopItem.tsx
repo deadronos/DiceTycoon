@@ -3,18 +3,33 @@ import { InfoTooltip } from '../InfoTooltip';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { PrestigeShopItem } from '../../utils/constants';
 
+/**
+ * Props for the PrestigeShopItemCard component.
+ */
 interface Props {
+  /** Static definition of the shop item. */
   item: PrestigeShopItem;
+  /** Current upgrade level. */
   currentLevel: number;
+  /** Cost for the next level. */
   nextCost: DecimalType;
+  /** Whether the player can afford the upgrade. */
   canBuy: boolean;
+  /** Whether the item is at max level. */
   isMaxed: boolean;
+  /** Progress percentage towards max level (or visual progress). */
   progressPercent: number;
+  /** Whether this item is recommended. */
   isRecommended: boolean;
+  /** Whether this item is new. */
   isNew: boolean;
+  /** Callback to purchase the item. */
   onBuy: () => void;
 }
 
+/**
+ * Renders an individual card for a prestige shop item.
+ */
 export const PrestigeShopItemCard: React.FC<Props> = ({
   item,
   currentLevel,

@@ -5,14 +5,25 @@ import { formatShort } from '../../utils/decimal';
 import { getAscensionCreditBonus, getAscensionDieProduction, getAscensionUnlockCost, getAscensionUpgradeCost } from '../../utils/ascension';
 import AscensionDieCard from './AscensionDieCard';
 
+/**
+ * Props for the AscensionPanel component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
+  /** Global production rates for ascension resources. */
   production: { stardustPerSecond: DecimalType; resonancePerSecond: DecimalType };
+  /** Callback to unlock a die. */
   onUnlockDie: (id: number) => void;
+  /** Callback to upgrade a die. */
   onUpgradeDie: (id: number) => void;
+  /** Callback to change focus of a die. */
   onFocusChange: (id: number, focus: AscensionDieFocus) => void;
 }
 
+/**
+ * The main panel for the Ascension system, showing global stats and the grid of ascension dice.
+ */
 export const AscensionPanel: React.FC<Props> = ({
   gameState,
   production,

@@ -3,6 +3,7 @@ import Decimal from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { ComboResult, ComboKind, ComboIntensity } from '../types/combo';
 
+/** Priority order for checking combos (check rarer first). */
 const COMBO_PRIORITY: Array<{ threshold: number; kind: ComboKind }> = [
   { threshold: 6, kind: 'sixKind' },
   { threshold: 5, kind: 'fiveKind' },
@@ -11,6 +12,7 @@ const COMBO_PRIORITY: Array<{ threshold: number; kind: ComboKind }> = [
   { threshold: 2, kind: 'pair' },
 ];
 
+/** Human-readable labels for combo kinds. */
 const COMBO_LABELS: Record<ComboKind, string> = {
   pair: 'Pair',
   triple: 'Triple',
@@ -20,6 +22,7 @@ const COMBO_LABELS: Record<ComboKind, string> = {
   flush: 'Royal Flush',
 };
 
+/** Intensity levels associated with each combo kind. */
 const COMBO_INTENSITY: Record<ComboKind, ComboIntensity> = {
   pair: 'low',
   triple: 'medium',
@@ -29,6 +32,7 @@ const COMBO_INTENSITY: Record<ComboKind, ComboIntensity> = {
   flush: 'legendary',
 };
 
+/** Emojis associated with each combo kind. */
 const COMBO_EMOJIS: Record<ComboKind, string> = {
   pair: '🎉',
   triple: '✨',
@@ -38,9 +42,11 @@ const COMBO_EMOJIS: Record<ComboKind, string> = {
   flush: '🌈',
 };
 
-// Bonus multipliers applied to total roll when a combo is detected.
-// Values chosen to give small rewards for common combos and larger
-// rewards for rare combos (flush/six of a kind).
+/**
+ * Bonus multipliers applied to total roll when a combo is detected.
+ * Values chosen to give small rewards for common combos and larger
+ * rewards for rare combos (flush/six of a kind).
+ */
 const COMBO_BONUS_MULTIPLIER: Record<ComboKind, number> = {
   pair: 1.05,
   triple: 1.1,
@@ -50,9 +56,14 @@ const COMBO_BONUS_MULTIPLIER: Record<ComboKind, number> = {
   flush: 2.0,
 };
 
-// Multi-combo bonus: additional multiplier when multiple combos are detected
+/** Multi-combo bonus: additional multiplier when multiple combos are detected. */
 const MULTI_COMBO_BONUS = 1.25; // +25% bonus for simultaneous combos
 
+/**
+ * Calculates the total multiplier for a given combo result.
+ * @param combo The detected combo result.
+ * @returns A Decimal multiplier (e.g., 1.5 for +50% bonus).
+ */
 export function getComboMultiplier(combo: ComboResult): DecimalType {
   if (!combo) return new Decimal(1);
   const primaryValue = COMBO_BONUS_MULTIPLIER[combo.kind] ?? 1;
@@ -83,6 +94,8 @@ const numberWord = (value: number): string => {
 /**
  * Detect combos from a list of rolled faces. Returns null if no combo was found.
  * Now supports multi-combo detection (e.g., two pairs, two triples).
+ * @param faces The array of die faces rolled.
+ * @returns A ComboResult object if a combo is detected, otherwise null.
  */
 export function detectCombo(faces: number[]): ComboResult | null {
   if (faces.length < 2) {
@@ -181,13 +194,23 @@ export function detectCombo(faces: number[]): ComboResult | null {
   };
 }
 
+/**
+ * Metadata for displaying combo notifications and history.
+ */
 export interface ComboMetadata {
+  /** The title of the combo notification. */
   title: string;
+  /** The descriptive message for the combo. */
   message: string;
+  /** The visual intensity level. */
   intensity: ComboIntensity;
+  /** The primary emoji for the combo. */
   emoji: string;
+  /** The numerical multiplier applied. */
   multiplier: number;
+  /** The percentage bonus (0-100+). */
   bonusPercent: number;
+  /** Text label for the rarity/intensity. */
   rarityLabel: string;
 }
 
@@ -198,6 +221,11 @@ const INTENSITY_LABEL: Record<ComboIntensity, string> = {
   legendary: 'Legendary',
 };
 
+/**
+ * Generates display metadata for a combo result.
+ * @param combo The combo result to process.
+ * @returns Metadata suitable for UI display.
+ */
 export function getComboMetadata(combo: ComboResult): ComboMetadata {
   const label = COMBO_LABELS[combo.kind];
   const emoji = COMBO_EMOJIS[combo.kind];

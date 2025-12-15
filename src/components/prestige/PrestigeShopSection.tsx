@@ -6,13 +6,23 @@ import { PrestigeShopFilters, type PrestigeShopFilterOption } from './PrestigeSh
 import { PrestigeShopCategory as PrestigeShopCategoryComponent } from './PrestigeShopCategory';
 import type { PrestigeShopItemPayload } from './PrestigeShopTypes';
 
+/**
+ * Props for the PrestigeShopSection component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
+  /** Dictionary of all shop items. */
   shopItems: Record<PrestigeShopKey, PrestigeShopItem>;
+  /** Function to check if an upgrade is affordable. */
   canBuyUpgrade: (state: GameState, key: PrestigeShopKey) => boolean;
+  /** Function to calculate upgrade cost. */
   getUpgradeCost: (key: PrestigeShopKey, level: number) => DecimalType;
+  /** Callback to purchase an upgrade. */
   onBuyUpgrade: (key: PrestigeShopKey) => void;
+  /** Current filter state. */
   filter: PrestigeShopFilterOption;
+  /** Callback to update filter state. */
   setFilter: (value: PrestigeShopFilterOption) => void;
 }
 
@@ -33,6 +43,9 @@ const categoryDescriptions: Partial<Record<PrestigeShopCategory, string>> = {
 
 const recommendationKeys: PrestigeShopKey[] = ['multiplier', 'luckFabricator', 'autorollCooldown'];
 
+/**
+ * Renders the main shop area containing all upgrade categories.
+ */
 export const PrestigeShopSection: React.FC<Props> = ({
   gameState,
   shopItems,
