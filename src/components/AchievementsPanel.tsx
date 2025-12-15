@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AchievementState } from '../types/game';
+import type { AchievementDefinition } from '../utils/achievements';
 import { getAchievementDefinitions } from '../utils/achievements';
 
 /**
@@ -17,7 +18,7 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ achievemen
   const definitions = getAchievementDefinitions();
   const newlyUnlocked = new Set(achievements.newlyUnlocked);
 
-  const getRewardText = (def: any) => {
+  const getRewardText = (def: AchievementDefinition) => {
     if (!def.reward) return null;
     if (def.reward.type === 'global_multiplier') {
       return `+${def.reward.value.times(100).toNumber()}% Global Multiplier`;

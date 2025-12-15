@@ -198,9 +198,8 @@ export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): u
 
     // Otherwise it might be a simpler test object - only deserialize credits if present
     if (p.credits && typeof p.credits === 'string') {
-      // mutate parsed object to convert credits string into Decimal
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (p as any).credits = fromDecimalString(p.credits as string);
+      // Return a new object with credits converted to Decimal
+      return { ...p, credits: fromDecimalString(p.credits as string) };
     }
 
     return p;
