@@ -18,7 +18,11 @@ State:
   enabled: boolean,
   level: number,
   cooldown: Decimal, // seconds
-  batchSize: number // how many roll actions to group per autoroll trigger (optional)
+  dynamicBatch: boolean,
+  batchThresholdMs: number,
+  maxRollsPerTick: number,
+  animationBudget: number,
+  batchSize: number // how many roll actions to group per autoroll trigger (optional or computed)
 }
 
 Default:
@@ -26,7 +30,13 @@ Default:
 - enabled: false
 - level: 0
 - cooldown: Decimal(2.0)
+- dynamicBatch: true
+- batchThresholdMs: 100
+- maxRollsPerTick: 1000
+- animationBudget: 10
 - batchSize: 1
+
+For batching behavior and implementation details see `D007 — Autoroll Decimal Batching`.
 
 ## Upgrade Path
 
