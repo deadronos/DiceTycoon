@@ -67,4 +67,13 @@
 
 - Updated `memory/systemPatterns.md` and `memory/techContext.md` to reflect actual filenames, scripts, and patterns in the codebase.
 
+### 2025-11-10
+
+- Implemented Autoroll Decimal Batching: added `src/utils/autorollBatchRunner.ts`, `src/utils/autorollBatchAnimations.ts`; unit tests added in `tests/autoroll-batch-runner.test.ts`. Wired runner into UI in `src/components/AutorollControls.tsx` and `src/App.tsx`. Persisted new autoroll fields and `dice.animationLevel` in `src/utils/storage.ts`. TASK006 moved to Completed.
+
+### 2025-12-15
+
+- Documentation backfill in progress: updated `D001-core-gameplay.md` (die data model and tests) and `D002-persistence.md` (persisted fields), updated `D003-autoroll.md` to reference D007, changed `D007` status to Implemented and referenced implementation artifacts. Created `D008-die-animations-abilities.md` and opened `TASK007` to track remaining doc finalization tasks.
+
+
 

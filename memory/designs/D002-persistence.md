@@ -31,6 +31,7 @@ Example payload:
 - All Decimal instances must be converted to strings before JSON serialization.
 - On load, strings that represent numeric game fields are converted back into Decimal instances.
 - The `storage` utility will explicitly list keys that require Decimal conversion for robustness (e.g., credits, die.multiplier, autoroll.cooldown).
+- Note: Several new primitive autoroll fields (`dynamicBatch`, `batchThresholdMs`, `maxRollsPerTick`, `animationBudget`) and per-die `animationLevel` are stored as native booleans/numbers and are restored with sensible defaults when missing from older save versions (see Migration Strategy).
 
 ## Migration Strategy
 
