@@ -30,6 +30,15 @@ interface DieCardProps {
   canUnlockAnimation: boolean;
 }
 
+const DIE_ABILITIES: Record<number, { name: string; description: string }> = {
+  1: { name: 'The Starter', description: 'Reliable first die.' },
+  2: { name: 'Buffer', description: '+10% multiplier to adjacent dice.' },
+  3: { name: 'Rusher', description: '5% chance to trigger an immediate extra roll.' },
+  4: { name: 'Combo Master', description: 'Triples the value of combos it participates in.' },
+  5: { name: 'Lucky', description: '+5% chance for higher face values.' },
+  6: { name: 'Tycoon', description: '+5% Global Multiplier.' },
+};
+
 /**
  * Renders a single die card with its status, face, and upgrade actions.
  */
@@ -88,6 +97,8 @@ export const DieCard: React.FC<DieCardProps> = ({
     return `animation-level-${die.animationLevel} rolling`;
   };
 
+  const ability = DIE_ABILITIES[die.id];
+
   if (!die.unlocked) {
     return (
       <div className="die-card glass-card locked">
@@ -95,6 +106,12 @@ export const DieCard: React.FC<DieCardProps> = ({
           <div className="lock-icon">🔒</div>
           <div className="die-info">
             <div className="die-level">Die #{die.id}</div>
+            {ability && (
+                 <div className="die-ability-locked">
+                    <span className="die-ability-name">{ability.name}</span>
+                    <span className="die-ability-desc">{ability.description}</span>
+                 </div>
+            )}
             <button
               className="btn btn-primary btn-small"
               onClick={onUnlock}
@@ -113,6 +130,12 @@ export const DieCard: React.FC<DieCardProps> = ({
     <div className={cardClassName}>
       <div className="die-info">
         <div className="die-level">Die #{die.id} • Level {die.level}</div>
+        {ability && (
+             <div className="die-ability" title={ability.description}>
+                <span className="die-ability-icon">⚡</span>
+                <span className="die-ability-name">{ability.name}</span>
+             </div>
+        )}
       </div>
 
       <div className={`die-face ${getAnimationClass()}`}>

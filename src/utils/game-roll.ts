@@ -104,13 +104,21 @@ export function applyRollOutcome(
     baseCredits: DecimalType;
     combo: ComboResult | null;
     updatedDice?: GameState['dice'];
+    comboBonusMultiplier?: DecimalType;
   }
 ): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
-  const { rolledFaces, baseCredits, combo, updatedDice } = params;
+  const { rolledFaces, baseCredits, combo, updatedDice, comboBonusMultiplier } = params;
   const { multiplier: chainMultiplier, chain } = prepareComboChain(state, combo);
 
   let finalCredits = baseCredits;
-  if (combo) finalCredits = finalCredits.times(getComboMultiplier(combo));
+  if (combo) {
+      let comboMultiplier = getComboMultiplier(combo);
+      if (comboBonusMultiplier) {
+          comboMultiplier = comboMultiplier.times(comboBonusMultiplier);
+      }
+      finalCredits = finalCredits.times(comboMultiplier);
+  }
+
   finalCredits = finalCredits.times(chainMultiplier);
   finalCredits = applyPrestigeMultipliers(finalCredits, state);
 
@@ -124,17 +132,27 @@ export function applyRollOutcome(
   };
 
   const achievementContextState: GameState = { ...baseState, achievements: state.achievements };
-  const achievements = evaluateAchievements(state.achievements, {
+  const { achievements, luckPointsGained } = evaluateAchievements(state.achievements, {
     state: achievementContextState,
     stats: updatedStats,
     finalCredits,
     combo,
   });
 
+  // Apply rewards from achievements (Luck Points)
+  let prestigeState = baseState.prestige;
+  if (luckPointsGained.gt(0) && prestigeState) {
+      prestigeState = {
+          ...prestigeState,
+          luckPoints: prestigeState.luckPoints.plus(luckPointsGained),
+      };
+  }
+
   return {
     newState: {
       ...baseState,
       achievements,
+      prestige: prestigeState,
     },
     creditsEarned: finalCredits,
     combo,
