@@ -4,23 +4,41 @@ import type { GameState } from '../../types/game';
 import { formatFull, formatShort } from '../../utils/decimal';
 import { InfoTooltip } from '../InfoTooltip';
 
+/**
+ * Props for the PrestigeOverview component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
+  /** Amount of Luck Points to be gained upon prestige. */
   luckGain: DecimalType;
+  /** Currently banked Luck Points. */
   currentLuck: DecimalType;
+  /** Total Luck Points after prestige. */
   projectedLuck: DecimalType;
+  /** Current Luck Multiplier effect. */
   luckMultiplier: DecimalType;
+  /** Multiplier applied to luck gain. */
   luckGainBoost: DecimalType;
+  /** Multiplier applied from shop upgrades. */
   shopMultiplier: DecimalType;
+  /** Multiplier applied to autoroll cooldown. */
   autorollBoost: DecimalType;
+  /** Percentage reduction of autoroll cooldown. */
   autorollReductionPercent: number;
+  /** Percentage progress towards the next Luck Point. */
   luckProgressPercent: number;
+  /** Callback to confirm prestige reset. */
   onConfirm: () => void;
+  /** Callback to close the prestige modal. */
   onClose: () => void;
 }
 
 const formatMultiplier = (value: DecimalType): string => `×${value.toFixed(2)}`;
 
+/**
+ * Displays the main prestige confirmation screen with stats and projected gains.
+ */
 export const PrestigeOverview: React.FC<Props> = ({
   gameState,
   luckGain,

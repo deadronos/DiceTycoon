@@ -30,7 +30,13 @@ Each die is represented as:
   unlocked: boolean,
   level: number,
   multiplier: Decimal,
-  animationUnlocked: boolean
+  animationLevel: number, // 0 = no animation; positive integers indicate animation tier
+  currentFace: number,
+  isRolling: boolean,
+  ability?: {
+    name: string,
+    description: string
+  }
 }
 
 Initial values for a newly unlocked die:
@@ -38,7 +44,10 @@ Initial values for a newly unlocked die:
 - unlocked: true
 - level: 1
 - multiplier: Decimal(1)
-- animationUnlocked: false
+- animationLevel: 0
+- currentFace: 1
+- isRolling: false
+- ability: (defined per die id; see D008 — Die Animations & Abilities)
 
 ## Leveling & Costs
 
@@ -72,6 +81,8 @@ Use Decimal math for all calculations.
 
 - Unit test: Given fixed RNG seed or mocked randomness, verify credits calculation matches expected Decimal result.
 - Integration test: Perform a roll and assert UI updates and credit totals.
+- Animation test: Purchasing or upgrading an animation should deduct cost, increase the die's `animationLevel`, and the UI should reflect animation changes (Acceptance: animationLevel increments and roundtrip persisted).
+- Die abilities test: Verify known die abilities apply their effects (e.g., Buffer increases adjacent die multipliers, Rusher has a chance to trigger an extra roll) in unit tests with deterministic RNG or mocked states.
 
 ## Notes and Open Questions
 

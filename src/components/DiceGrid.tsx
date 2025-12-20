@@ -5,13 +5,23 @@ import { GAME_CONSTANTS } from '../utils/constants';
 import { getUnlockCost, getLevelUpCost, getAnimationUnlockCost } from '../utils/game-logic';
 import { canAfford } from '../utils/decimal';
 
+/**
+ * Props for the DiceGrid component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
+  /** Callback to unlock a die. */
   onUnlockDie: (dieId: number) => void;
+  /** Callback to level up a die. */
   onLevelUpDie: (dieId: number) => void;
+  /** Callback to unlock an animation. */
   onUnlockAnimation: (dieId: number) => void;
 }
 
+/**
+ * Renders the grid of all dice, including locked and unlocked ones.
+ */
 export const DiceGrid: React.FC<Props> = ({ gameState, onUnlockDie, onLevelUpDie, onUnlockAnimation }) => {
   return (
     <div className="dice-grid">

@@ -22,7 +22,10 @@ import { fromDecimalString } from './decimal';
 import { createDefaultAscensionState } from './ascension';
 
 /**
- * Serialize GameState to a JSON-safe format
+ * Serializes the game state into a JSON-safe format.
+ * Converts complex types (Decimal) to strings.
+ * @param state The current game state.
+ * @returns The serialized game state.
  */
 export function serializeGameState(state: GameState): SerializedGameState {
   return {
@@ -65,7 +68,10 @@ export function serializeGameState(state: GameState): SerializedGameState {
 }
 
 /**
- * Deserialize a saved game state
+ * Deserializes a saved game state back into the active game state format.
+ * Restores Decimal objects from strings.
+ * @param data The serialized game state.
+ * @returns The restored game state.
  */
 export function deserializeGameState(data: SerializedGameState): GameState {
   const stats = data.stats ? deserializeStats(data.stats) : createDefaultStats();
@@ -125,7 +131,10 @@ export function deserializeGameState(data: SerializedGameState): GameState {
 }
 
 /**
- * Save game state to localStorage
+ * Saves the game state to local storage.
+ * @param key The local storage key.
+ * @param state The state object to save.
+ * @returns True if save was successful.
  */
 export function safeSave(key: string = STORAGE_KEY, state: unknown): boolean {
   try {
@@ -161,7 +170,10 @@ export function safeSave(key: string = STORAGE_KEY, state: unknown): boolean {
 }
 
 /**
- * Load game state from localStorage
+ * Loads the game state from local storage.
+ * @param key The local storage key.
+ * @param fallback The fallback value if load fails.
+ * @returns The loaded state or fallback.
  */
 export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): unknown {
   try {
@@ -186,9 +198,8 @@ export function safeLoad(key: string = STORAGE_KEY, fallback: unknown = null): u
 
     // Otherwise it might be a simpler test object - only deserialize credits if present
     if (p.credits && typeof p.credits === 'string') {
-      // mutate parsed object to convert credits string into Decimal
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (p as any).credits = fromDecimalString(p.credits as string);
+      // Return a new object with credits converted to Decimal
+      return { ...p, credits: fromDecimalString(p.credits as string) };
     }
 
     return p;
@@ -251,6 +262,10 @@ function normalizeAchievements(data?: AchievementState): AchievementState {
   };
 }
 
+/**
+ * Creates a default set of game statistics.
+ * @returns Default GameStats object.
+ */
 export function createDefaultStats(): GameStats {
   return {
     bestRoll: new Decimal(0),
@@ -272,6 +287,10 @@ export function createDefaultStats(): GameStats {
   };
 }
 
+/**
+ * Creates a default set of achievement states.
+ * @returns Default AchievementState object.
+ */
 export function createDefaultAchievements(): AchievementState {
   return {
     unlocked: [],

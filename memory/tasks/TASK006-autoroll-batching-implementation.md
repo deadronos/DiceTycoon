@@ -1,7 +1,7 @@
 # TASK006 - Implement Autoroll Decimal Batching
 
-**Status:** In Progress
-**Added:** 2025-11-10
+**Status:** Completed  
+**Added:** 2025-11-10  
 **Updated:** 2025-11-10
 
 ## Original Request
@@ -68,22 +68,26 @@ Add a Decimal-based autoroll batch runner that computes due rolls on a short tic
 
 | ID  | Description                                | Status       | Updated     | Notes |
 | --- | ------------------------------------------ | ------------ | ----------- | ----- |
-| 6.1 | Scaffold `autorollBatchRunner.ts`          | In Progress  | 2025-11-10  | Runner skeleton + Decimal tick loop |
-| 6.2 | Wire runner into `AutorollControls.tsx`    | Not Started  |             | start/stop, UI fields |
-| 6.3 | Extend `performRoll` API                   | Not Started  |             | suppressPerRollUI option |
-| 6.4 | Implement sampled animations helpers       | Not Started  |             | animate first N, aggregated popup |
-| 6.5 | Persist new autoroll fields                 | Not Started  |             | storage load/save changes |
-| 6.6 | Add unit tests for parity, cap, animations | Not Started  |             | new test file |
-| 6.7 | Run tests and fix issues                   | Not Started  |             | CI / local run |
+| 6.1 | Scaffold `autorollBatchRunner.ts`          | Completed    | 2025-11-10  | Runner implemented in `src/utils/autorollBatchRunner.ts` |
+| 6.2 | Wire runner into `AutorollControls.tsx`    | Completed    | 2025-11-10  | Runner start/stop wired; UI controls added |
+| 6.3 | Extend `performRoll` API                   | Completed    | 2025-11-10  | `suppressPerRollUI` implemented in `src/utils/game-roll.ts` |
+| 6.4 | Implement sampled animations helpers       | Completed    | 2025-11-10  | `createBatchAnimationPlan` and helpers in `src/utils/autorollBatchAnimations.ts` |
+| 6.5 | Persist new autoroll fields                 | Completed    | 2025-11-10  | `src/utils/storage.ts` updated to save/load fields |
+| 6.6 | Add unit tests for parity, cap, animations | Completed    | 2025-11-10  | `tests/autoroll-batch-runner.test.ts` added |
+| 6.7 | Run tests and fix issues                   | Completed    | 2025-11-10  | Local test run and fixes applied |
 
 ## Progress Log
 
 ### 2025-11-10
 
 - Created task file and linked design: `memory/designs/D007-autoroll-batching.md`.
-- Marked TASK006 as In Progress; started subtask 6.1 (runner scaffold).
+- Implemented autoroll batch runner (`src/utils/autorollBatchRunner.ts`) and added animation helpers (`src/utils/autorollBatchAnimations.ts`).
+- Wired runner into UI (`src/components/AutorollControls.tsx` and `src/App.tsx`) and updated `performRoll` to support `suppressPerRollUI`.
+- Persisted autoroll fields and `dice.animationLevel` in `src/utils/storage.ts`.
+- Added unit tests (`tests/autoroll-batch-runner.test.ts`) for parity, cap, and animation sampling.
+- Marked TASK006 as Completed and moved the task to the Completed section in `memory/tasks/_index.md`.
 
 
 ---
 
-*End of TASK006* 
+End of TASK006

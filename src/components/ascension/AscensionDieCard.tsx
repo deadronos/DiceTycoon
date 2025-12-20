@@ -3,17 +3,31 @@ import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { type AscensionDieState, type AscensionDieFocus } from '../../types/game';
 import { formatShort } from '../../utils/decimal';
 
+/**
+ * Props for the AscensionDieCard component.
+ */
 interface Props {
+  /** The state of the ascension die. */
   die: AscensionDieState;
+  /** Current available stardust. */
   stardust: DecimalType;
+  /** Calculated production rates for this die. */
   production: { stardustPerSecond: DecimalType; resonancePerSecond: DecimalType };
+  /** Cost to unlock the die. */
   unlockCost: DecimalType;
+  /** Cost to upgrade the die's tier. */
   upgradeCost: DecimalType;
+  /** Callback to unlock the die. */
   onUnlock: (id: number) => void;
+  /** Callback to upgrade the die. */
   onUpgrade: (id: number) => void;
+  /** Callback to change the resource focus of the die. */
   onFocusChange: (id: number, focus: AscensionDieFocus) => void;
 }
 
+/**
+ * Displays a single ascension die with its stats, upgrade options, and focus toggle.
+ */
 export const AscensionDieCard: React.FC<Props> = ({
   die,
   stardust,

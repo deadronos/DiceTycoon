@@ -3,10 +3,17 @@ import Decimal from '../utils/decimal';
 import type { GameState } from '../types/game';
 import { formatFull, formatShort } from '../utils/decimal';
 
+/**
+ * Props for the StatsPanel component.
+ */
 interface Props {
+  /** The full game state. */
   gameState: GameState;
 }
 
+/**
+ * Displays global statistics about the player's progress.
+ */
 export const StatsPanel: React.FC<Props> = ({ gameState }) => {
   const unlockedDiceCount = useMemo(() => gameState.dice.filter(d => d.unlocked).length, [gameState.dice]);
   const totalLevels = useMemo(() => gameState.dice.reduce((sum, d) => sum + d.level, 0), [gameState.dice]);

@@ -1,14 +1,33 @@
 import React from 'react';
 import type { AchievementState } from '../types/game';
+import type { AchievementDefinition } from '../utils/achievements';
 import { getAchievementDefinitions } from '../utils/achievements';
 
+/**
+ * Props for the AchievementsPanel.
+ */
 interface AchievementsPanelProps {
+  /** The current achievement state. */
   achievements: AchievementState;
 }
 
+/**
+ * Displays the list of achievements and their unlock status.
+ */
 export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ achievements }) => {
   const definitions = getAchievementDefinitions();
   const newlyUnlocked = new Set(achievements.newlyUnlocked);
+
+  const getRewardText = (def: AchievementDefinition) => {
+    if (!def.reward) return null;
+    if (def.reward.type === 'global_multiplier') {
+      return `+${def.reward.value.times(100).toNumber()}% Global Multiplier`;
+    }
+    if (def.reward.type === 'luck_points') {
+      return `+${def.reward.value.toString()} Luck Points`;
+    }
+    return null;
+  };
 
   return (
     <div className="achievements-panel glass-card">
@@ -22,6 +41,8 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ achievemen
         {definitions.map(def => {
           const isUnlocked = achievements.unlocked.includes(def.id);
           const isNew = newlyUnlocked.has(def.id);
+          const rewardText = getRewardText(def);
+
           return (
             <div
               key={def.id}
@@ -30,9 +51,14 @@ export const AchievementsPanel: React.FC<AchievementsPanelProps> = ({ achievemen
               <div className="achievement__status" aria-hidden="true">
                 {isUnlocked ? '✅' : '⬜'}
               </div>
-              <div>
+              <div className="achievement__content">
                 <div className="achievement__name">{def.name}</div>
                 <div className="achievement__description">{def.description}</div>
+                {rewardText && (
+                  <div className="achievement__reward">
+                    Reward: <strong>{rewardText}</strong>
+                  </div>
+                )}
               </div>
               {isNew && <span className="achievement__badge">New!</span>}
             </div>

@@ -12,6 +12,12 @@ const CHAIN_BONUS_STEP = new Decimal(0.1);
 
 const ensureStats = (stats?: GameStats): GameStats => stats ?? createDefaultStats();
 
+/**
+ * Updates combo chain statistics before calculating roll results.
+ * @param state The current game state.
+ * @param combo The detected combo for the current roll.
+ * @returns Object with the chain multiplier and updated chain stats.
+ */
 export function prepareComboChain(state: GameState, combo: ComboResult | null): {
   multiplier: DecimalType;
   chain: ComboChainStats;
@@ -53,6 +59,14 @@ export function prepareComboChain(state: GameState, combo: ComboResult | null): 
   };
 }
 
+/**
+ * Updates game statistics after a roll is completed.
+ * @param state The current game state.
+ * @param finalCredits The total credits earned in the roll.
+ * @param rolledFaces The faces rolled.
+ * @param comboChain The updated combo chain stats.
+ * @returns The updated GameStats object.
+ */
 export function updateStatsAfterRoll(
   state: GameState,
   finalCredits: DecimalType,
@@ -77,6 +91,12 @@ export function updateStatsAfterRoll(
   };
 }
 
+/**
+ * Calculates and applies the full outcome of a roll (credits, stats, achievements).
+ * @param state The current game state.
+ * @param params Input parameters (faces, base credits, combo, dice state).
+ * @returns Object containing the new state, credits earned, and combo.
+ */
 export function applyRollOutcome(
   state: GameState,
   params: {
@@ -84,13 +104,21 @@ export function applyRollOutcome(
     baseCredits: DecimalType;
     combo: ComboResult | null;
     updatedDice?: GameState['dice'];
+    comboBonusMultiplier?: DecimalType;
   }
 ): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
-  const { rolledFaces, baseCredits, combo, updatedDice } = params;
+  const { rolledFaces, baseCredits, combo, updatedDice, comboBonusMultiplier } = params;
   const { multiplier: chainMultiplier, chain } = prepareComboChain(state, combo);
 
   let finalCredits = baseCredits;
-  if (combo) finalCredits = finalCredits.times(getComboMultiplier(combo));
+  if (combo) {
+      let comboMultiplier = getComboMultiplier(combo);
+      if (comboBonusMultiplier) {
+          comboMultiplier = comboMultiplier.times(comboBonusMultiplier);
+      }
+      finalCredits = finalCredits.times(comboMultiplier);
+  }
+
   finalCredits = finalCredits.times(chainMultiplier);
   finalCredits = applyPrestigeMultipliers(finalCredits, state);
 
@@ -104,17 +132,27 @@ export function applyRollOutcome(
   };
 
   const achievementContextState: GameState = { ...baseState, achievements: state.achievements };
-  const achievements = evaluateAchievements(state.achievements, {
+  const { achievements, luckPointsGained } = evaluateAchievements(state.achievements, {
     state: achievementContextState,
     stats: updatedStats,
     finalCredits,
     combo,
   });
 
+  // Apply rewards from achievements (Luck Points)
+  let prestigeState = baseState.prestige;
+  if (luckPointsGained.gt(0) && prestigeState) {
+      prestigeState = {
+          ...prestigeState,
+          luckPoints: prestigeState.luckPoints.plus(luckPointsGained),
+      };
+  }
+
   return {
     newState: {
       ...baseState,
       achievements,
+      prestige: prestigeState,
     },
     creditsEarned: finalCredits,
     combo,
@@ -122,12 +160,19 @@ export function applyRollOutcome(
 }
 
 /**
- * Perform a roll for all unlocked dice (manual roll entrypoint).
+ * Options for performing a manual roll.
  */
 export interface PerformRollOptions {
+  /** If true, suppresses UI events (e.g. for batch rolling). */
   suppressPerRollUI?: boolean;
 }
 
+/**
+ * Perform a roll for all unlocked dice (entry point).
+ * @param state The current game state.
+ * @param options Roll options.
+ * @returns The roll result.
+ */
 export function performRoll(
   state: GameState,
   options: PerformRollOptions = {}
