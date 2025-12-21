@@ -1772,3 +1772,47 @@ body {
   border-radius: 12px;
   min-width: 140px;
 }
+
+/* Critical Hit Popup */
+.credit-popup.critical {
+  color: #fdcb6e; /* Gold */
+  font-size: 3rem;
+  text-shadow: 0 0 25px rgba(253, 203, 110, 0.9);
+  animation: popup-critical-animation 2.5s ease-out forwards;
+}
+
+.critical-label {
+  font-size: 1.2rem;
+  color: #ff7675;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  animation: critical-shake 0.5s ease-in-out;
+}
+
+@keyframes popup-critical-animation {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15% { opacity: 1; transform: translate(-50%, -60%) scale(1.5); }
+  100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+}
+
+@keyframes critical-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Die Milestones */
+.die-milestone {
+  font-size: 0.8rem;
+  background: rgba(253, 203, 110, 0.2);
+  color: #fdcb6e;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  display: inline-block;
+}
+.die-milestone--close {
+  animation: pulse 1s infinite;
+  box-shadow: 0 0 8px rgba(253, 203, 110, 0.4);
+}

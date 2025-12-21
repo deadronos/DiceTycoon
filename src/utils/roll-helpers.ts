@@ -2,6 +2,7 @@ import Decimal from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState } from '../types/game';
 import type { ComboResult } from '../types/combo';
+import { GAME_CONSTANTS } from './constants';
 import { detectCombo } from './combos';
 import { rollDie } from './decimal';
 import { applyRollOutcome } from './game-roll';
@@ -29,12 +30,14 @@ export function executeRoll(
   state: GameState,
   options: { animate?: boolean } = {},
   isExtraRoll = false
-): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null; isCritical: boolean } {
   const { animate = true } = options;
 
   let totalCredits = new Decimal(0);
   const rolledFaces: number[] = [];
   let extraRollTriggered = false;
+
+  const isCritical = !isExtraRoll && Math.random() < GAME_CONSTANTS.BASE_CRIT_CHANCE;
 
   const updatedDice = state.dice.map((die) => {
     if (!die.unlocked) return die;
@@ -74,6 +77,10 @@ export function executeRoll(
     };
   });
 
+  if (isCritical) {
+    totalCredits = totalCredits.times(GAME_CONSTANTS.BASE_CRIT_MULTIPLIER);
+  }
+
   const combo = detectCombo(rolledFaces);
 
   // Ability: Die 4 (Combo Master) - Triples the value of combos it participates in
@@ -87,13 +94,15 @@ export function executeRoll(
       }
   }
 
-  let result = applyRollOutcome(state, {
+  const outcome = applyRollOutcome(state, {
     rolledFaces,
     baseCredits: totalCredits,
     combo,
     updatedDice,
     comboBonusMultiplier
   });
+
+  let result = { ...outcome, isCritical };
 
   if (extraRollTriggered) {
       // Execute another roll without animation (immediate)
@@ -103,7 +112,8 @@ export function executeRoll(
       result = {
           newState: extraResult.newState,
           creditsEarned: result.creditsEarned.plus(extraResult.creditsEarned),
-          combo: result.combo
+          combo: result.combo,
+          isCritical: result.isCritical || extraResult.isCritical
       };
   }
 

@@ -176,6 +176,6 @@ export interface PerformRollOptions {
 export function performRoll(
   state: GameState,
   options: PerformRollOptions = {}
-): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null } {
+): { newState: GameState; creditsEarned: DecimalType; combo: ComboResult | null; isCritical: boolean } {
   return executeRoll(state, { animate: !options.suppressPerRollUI });
 }
