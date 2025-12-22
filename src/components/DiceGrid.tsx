@@ -5,6 +5,7 @@ import { GAME_CONSTANTS } from '../utils/constants';
 import { getUnlockCost, getLevelUpCost, getAnimationUnlockCost, getBulkLevelUpCost, getMaxAffordableLevels } from '../utils/game-logic';
 import { canAfford } from '../utils/decimal';
 import { useState } from 'react';
+import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 /**
  * Props for the DiceGrid component.
@@ -52,7 +53,7 @@ export const DiceGrid: React.FC<Props> = ({ gameState, onUnlockDie, onLevelUpDie
           const unlockCost = !die.unlocked ? getUnlockCost(die.id) : undefined;
           const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
 
-          let levelUpCost: any = undefined;
+          let levelUpCost: DecimalType | undefined;
           let levelsToBuy = 1;
 
           if (die.unlocked && !isMaxLevel) {

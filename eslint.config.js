@@ -68,6 +68,8 @@ export default [
       'UI Mockup/**',
       '*.config.js',
       '*.config.ts',
+      '.github/**',
+      'scripts/**',
     ],
   },
 ];

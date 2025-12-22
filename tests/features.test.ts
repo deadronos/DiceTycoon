@@ -5,7 +5,6 @@ import { calculateMultiplier } from '../src/utils/decimal';
 import { executeRoll } from '../src/utils/roll-helpers';
 import { GAME_CONSTANTS } from '../src/utils/constants';
 import { createDefaultGameState } from '../src/utils/storage';
-import { GameState } from '../src/types/game';
 
 describe('Feature: Bulk Level Up', () => {
   it('calculates bulk cost correctly for amount=1', () => {
@@ -19,7 +18,6 @@ describe('Feature: Bulk Level Up', () => {
     // manual sum
     const base = GAME_CONSTANTS.BASE_LEVEL_COST;
     const growth = GAME_CONSTANTS.LEVEL_COST_GROWTH;
-    const level = 1;
 
     // cost for level 1: base * growth^1
     // cost for level 2: base * growth^2
