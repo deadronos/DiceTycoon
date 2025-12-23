@@ -75,6 +75,7 @@ export const App: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupCredits, setPopupCredits] = useState(new Decimal(0));
   const [popupRollCount, setPopupRollCount] = useState<number | null>(null);
+  const [popupIsCritical, setPopupIsCritical] = useState(false);
   const [comboToasts, setComboToasts] = useState<ComboToastEntry[]>([]);
   const [lastComboMetadata, setLastComboMetadata] = useState<ComboMetadata | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
@@ -266,9 +267,10 @@ export const App: React.FC = () => {
     emitCombosWithThrottle([combo]);
   }, [emitCombosWithThrottle]);
 
-  const showRollFeedback = useCallback((outcome: AutorollBatchOutcome, rollCount: number | null = null) => {
+  const showRollFeedback = useCallback((outcome: AutorollBatchOutcome & { isCritical?: boolean }, rollCount: number | null = null) => {
     setPopupCredits(outcome.creditsEarned);
     setPopupRollCount(rollCount);
+    setPopupIsCritical(!!outcome.isCritical);
     setShowPopup(true);
     if (outcome.combo) {
       emitComboForOutcome(outcome.combo);
@@ -303,6 +305,7 @@ export const App: React.FC = () => {
   const handlePopupComplete = useCallback(() => {
     setShowPopup(false);
     setPopupRollCount(null);
+    setPopupIsCritical(false);
   }, []);
 
   const stopLegacyAutorollInterval = useCallback(() => {
@@ -315,8 +318,8 @@ export const App: React.FC = () => {
   // Handle roll
   const handleRoll = useCallback(() => {
     setGameState(prevState => {
-      const { newState, creditsEarned, combo } = performRoll(prevState);
-      showRollFeedback({ creditsEarned, combo });
+      const { newState, creditsEarned, combo, isCritical } = performRoll(prevState);
+      showRollFeedback({ creditsEarned, combo, isCritical });
 
       setTimeout(() => {
         setGameState(prev => stopRollingAnimation(prev));
@@ -409,8 +412,8 @@ export const App: React.FC = () => {
   }, [gameState]);
 
   // Handle level up die
-  const handleLevelUpDie = useCallback((dieId: number) => {
-    const newState = levelUpDie(gameState, dieId);
+  const handleLevelUpDie = useCallback((dieId: number, amount: number = 1) => {
+    const newState = levelUpDie(gameState, dieId, amount);
     if (newState) {
       setGameState(newState);
     }
@@ -594,6 +597,7 @@ export const App: React.FC = () => {
         <CreditPopup
           credits={popupCredits}
           rollCount={popupRollCount}
+          isCritical={popupIsCritical}
           onComplete={handlePopupComplete}
         />
       )}

@@ -16,6 +16,8 @@ interface DieCardProps {
   levelUpCost?: DecimalType;
   /** Cost to unlock the next animation. */
   animationUnlockCost?: DecimalType;
+  /** Number of levels to purchase (for display). */
+  levelsToBuy?: number;
   /** Callback to unlock the die. */
   onUnlock: () => void;
   /** Callback to level up the die. */
@@ -53,22 +55,30 @@ export const DieCard: React.FC<DieCardProps> = ({
   canUnlock,
   canLevelUp,
   canUnlockAnimation,
+  levelsToBuy = 1,
 }) => {
   const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
-  const nextLevel = die.level + 1;
+  const nextLevel = die.level + levelsToBuy;
   const nextMultiplier = calculateMultiplier(
     GAME_CONSTANTS.BASE_MULTIPLIER,
     nextLevel,
-    GAME_CONSTANTS.MULTIPLIER_PER_LEVEL
+    GAME_CONSTANTS.MULTIPLIER_PER_LEVEL,
+    {
+      levels: GAME_CONSTANTS.MILESTONE_LEVELS,
+      bonus: GAME_CONSTANTS.MILESTONE_MULTIPLIER
+    }
   );
   const multiplierGain = nextMultiplier.minus(die.multiplier);
+
+  const nextMilestone = GAME_CONSTANTS.MILESTONE_LEVELS.find(l => l > die.level);
+  const isMilestoneClose = nextMilestone && nextMilestone - die.level <= 5;
   const cardClasses = [
     'die-card',
     'glass-card',
     die.unlocked ? 'unlocked' : 'locked',
   ];
 
-  if (canLevelUp && !isMaxLevel) {
+  if (canLevelUp && !isMaxLevel && levelsToBuy > 0) {
     cardClasses.push('die-card--upgrade-ready');
   }
   if (canUnlockAnimation && die.animationLevel < GAME_CONSTANTS.MAX_ANIMATION_LEVEL) {
@@ -79,7 +89,7 @@ export const DieCard: React.FC<DieCardProps> = ({
   }
 
   const cardClassName = cardClasses.join(' ');
-  const levelButtonClass = canLevelUp && !isMaxLevel
+  const levelButtonClass = canLevelUp && !isMaxLevel && levelsToBuy > 0
     ? 'btn btn-secondary btn-small btn-glow'
     : 'btn btn-secondary btn-small';
   const animationButtonClass = canUnlockAnimation
@@ -129,7 +139,14 @@ export const DieCard: React.FC<DieCardProps> = ({
   return (
     <div className={cardClassName}>
       <div className="die-info">
-        <div className="die-level">Die #{die.id} • Level {die.level}</div>
+        <div className="die-level">
+           Die #{die.id} • Level {die.level}
+           {nextMilestone && (
+             <span className={`die-milestone ${isMilestoneClose ? 'die-milestone--close' : ''}`} title={`x${GAME_CONSTANTS.MILESTONE_MULTIPLIER} Multiplier at Level ${nextMilestone}`}>
+               Goal: {nextMilestone}
+             </span>
+           )}
+        </div>
         {ability && (
              <div className="die-ability" title={ability.description}>
                 <span className="die-ability-icon">⚡</span>
@@ -155,13 +172,13 @@ export const DieCard: React.FC<DieCardProps> = ({
             <button
               className={levelButtonClass}
               onClick={onLevelUp}
-              disabled={!canLevelUp}
+              disabled={!canLevelUp || levelsToBuy === 0}
               title={levelUpCost ? formatFull(levelUpCost) : ''}
             >
-              Level Up ({levelUpCost ? formatShort(levelUpCost) : '?'})
+              Level Up {levelsToBuy > 1 ? `x${levelsToBuy} ` : ''}({levelUpCost ? formatShort(levelUpCost) : '?'})
             </button>
             <div className="die-action__preview">
-              <div>Next Level: {nextLevel}</div>
+              <div>Level: {die.level} → {nextLevel}</div>
               <div>Multiplier: ×{formatShort(nextMultiplier)}</div>
               <div>Gain: +{formatShort(multiplierGain)} / face</div>
             </div>

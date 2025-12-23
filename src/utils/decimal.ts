@@ -185,9 +185,26 @@ export function rollDie(): number {
  * @param baseMultiplier The starting multiplier.
  * @param level The current level.
  * @param multiplierPerLevel The increase per level.
+ * @param milestones Optional configuration for milestone bonuses.
  * @returns The calculated multiplier.
  */
-export function calculateMultiplier(baseMultiplier: DecimalType, level: number, multiplierPerLevel: DecimalType): DecimalType {
-  if (level <= 1) return baseMultiplier;
-  return baseMultiplier.times(toDecimal(multiplierPerLevel).pow(level - 1));
+export function calculateMultiplier(
+  baseMultiplier: DecimalType,
+  level: number,
+  multiplierPerLevel: DecimalType,
+  milestones?: { levels: number[]; bonus: DecimalType }
+): DecimalType {
+  let mult = baseMultiplier;
+  if (level > 1) {
+    mult = mult.times(toDecimal(multiplierPerLevel).pow(level - 1));
+  }
+
+  if (milestones) {
+    const passed = milestones.levels.filter(l => level >= l).length;
+    if (passed > 0) {
+      mult = mult.times(milestones.bonus.pow(passed));
+    }
+  }
+
+  return mult;
 }
