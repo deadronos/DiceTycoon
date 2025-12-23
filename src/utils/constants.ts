@@ -79,6 +79,14 @@ export const GAME_CONSTANTS: GameConstants = {
   ANIMATION_UNLOCK_COST: new Decimal(25),
   MAX_ANIMATION_LEVEL: 3,
   MAX_DIE_LEVEL: 100,
+
+  // Milestones
+  MILESTONE_LEVELS: [25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+  MILESTONE_MULTIPLIER: new Decimal(2),
+
+  // Critical Hits
+  BASE_CRIT_CHANCE: 0.01, // 1%
+  BASE_CRIT_MULTIPLIER: new Decimal(5),
 };
 
 /**

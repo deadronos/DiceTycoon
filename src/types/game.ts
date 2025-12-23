@@ -355,4 +355,12 @@ export interface GameConstants {
   MAX_ANIMATION_LEVEL: number;
   /** Maximum level a die can reach. */
   MAX_DIE_LEVEL: number;
+  /** Levels at which a die receives a milestone bonus. */
+  MILESTONE_LEVELS: number[];
+  /** Multiplier bonus applied at each milestone. */
+  MILESTONE_MULTIPLIER: DecimalType;
+  /** Base probability of a critical roll (0-1). */
+  BASE_CRIT_CHANCE: number;
+  /** Multiplier applied on a critical roll. */
+  BASE_CRIT_MULTIPLIER: DecimalType;
 }
