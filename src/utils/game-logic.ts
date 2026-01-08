@@ -10,5 +10,6 @@ export * from './offline-progress';
 export * from './reroll';
 export * from './roll-helpers';
 export * from './ascension';
+export * from './storage';
 
 // (Intentionally no additional logic here.)
