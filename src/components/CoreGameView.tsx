@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import DiceGrid from './DiceGrid';
 import GameControlPanel from './app/GameControlPanel';
-import { GameState, AutorollState, AutorollSessionStats } from '../types/game';
+import { GameState } from '../types/game';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 
 interface CoreGameViewProps {

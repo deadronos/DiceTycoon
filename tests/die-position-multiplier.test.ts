@@ -65,6 +65,8 @@ describe('Die Position Multiplier', () => {
 
   it('higher-numbered dice earn more credits', () => {
     vi.spyOn(decimalUtils, 'rollDie').mockReturnValue(4);
+    // Ensure Rusher (Die 3) doesn't randomly trigger an extra roll during this test
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
     
     const state = createDefaultGameState();
     // Unlock all six dice with same multiplier

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, type Dispatch, type SetStateAction, type MutableRefObject } from 'react';
 import { GameState } from '../types/game';
 import {
   canUnlockAscension,
@@ -12,8 +12,8 @@ import { AUTOROLL_BATCH_MIN_TICK_MS, ROLL_ANIMATION_DURATION } from '../utils/co
 
 interface UseGameLoopProps {
   gameState: GameState;
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
-  gameStateRef: React.MutableRefObject<GameState>;
+  setGameState: Dispatch<SetStateAction<GameState>>;
+  gameStateRef: MutableRefObject<GameState>;
   onBatchComplete: (outcomes: AutorollBatchOutcome[], finalState: GameState) => void;
   onRollFeedback: (outcome: AutorollBatchOutcome & { isCritical?: boolean }) => void;
 }

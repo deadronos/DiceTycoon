@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PrestigePanel } from './components/PrestigePanel';
 import { CreditPopup } from './components/CreditPopup';
 import { ConfettiBurst } from './components/ConfettiBurst';
@@ -32,7 +32,8 @@ import {
 import { canAfford } from './utils/decimal';
 import Decimal from './utils/decimal';
 import { PRESTIGE_SHOP_ITEMS, type PrestigeShopKey, ASCENSION_CONFIG } from './utils/constants';
-import type { AutorollState, AutorollSessionStats } from './types/game';
+import { GameState, AutorollState } from './types/game';
+import { AutorollBatchOutcome } from './utils/autorollBatchRunner';
 import { safeSave } from './utils/storage';
 import './styles.css';
 
@@ -47,7 +48,7 @@ export const App: React.FC = () => {
   const [showPrestige, setShowPrestige] = useState(false);
   const [activeView, setActiveView] = useState<'core' | 'ascension'>('core');
 
-  const onBatchComplete = useCallback((outcomes: any[], finalState: any) => {
+  const onBatchComplete = useCallback((outcomes: AutorollBatchOutcome[], finalState: GameState) => {
     setGameState(finalState);
     feedbackActions.emitSampledAnimations(outcomes, finalState.autoroll.animationBudget);
   }, [setGameState, feedbackActions]);

@@ -4,7 +4,7 @@ import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { type AutorollBatchOutcome } from '../utils/autorollBatchRunner';
 import { createBatchAnimationPlan } from '../utils/autorollBatchAnimations';
 import { getComboMetadata, type ComboMetadata } from '../utils/combos';
-import type { ComboResult, ComboIntensity } from '../types/combo';
+import type { ComboResult } from '../types/combo';
 import { CREDIT_POPUP_DURATION } from '../utils/constants';
 import type { ComboToastEntry } from '../components/ComboToastStack';
 
