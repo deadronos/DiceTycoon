@@ -15,12 +15,10 @@
     "deploy": "npm run update-docs && git add docs && git commit -m \"chore: update docs\" || echo \"no changes to commit\" && git push"
   },
   "dependencies": {
-    "break_infinity.js": "^2.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/node": "^25.0.9",
