@@ -1,4 +1,4 @@
-import Decimal from './decimal';
+import Decimal, { calculateCost } from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type {
   GameState,
@@ -179,7 +179,7 @@ export function getAscensionUnlockCost(die: AscensionDieState): DecimalType {
  * @returns The stardust cost.
  */
 export function getAscensionUpgradeCost(die: AscensionDieState): DecimalType {
-  return new Decimal(8).times(new Decimal(2).pow(die.tier));
+  return calculateCost(new Decimal(8), new Decimal(2), die.tier);
 }
 
 /**

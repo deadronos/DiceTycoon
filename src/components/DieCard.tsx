@@ -3,6 +3,8 @@ import { DieState } from '../types/game';
 import { formatShort, formatFull, calculateMultiplier } from '../utils/decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import { GAME_CONSTANTS } from '../utils/constants';
+import { DIE_ABILITIES, getDieFace } from '../utils/die-config';
+import { getNextMilestone } from '../utils/dice-upgrades';
 
 /**
  * Props for the DieCard component.
@@ -31,15 +33,6 @@ interface DieCardProps {
   /** Whether the animation unlock is affordable. */
   canUnlockAnimation: boolean;
 }
-
-const DIE_ABILITIES: Record<number, { name: string; description: string }> = {
-  1: { name: 'The Starter', description: 'Reliable first die.' },
-  2: { name: 'Buffer', description: '+10% multiplier to adjacent dice.' },
-  3: { name: 'Rusher', description: '5% chance to trigger an immediate extra roll.' },
-  4: { name: 'Combo Master', description: 'Triples the value of combos it participates in.' },
-  5: { name: 'Lucky', description: '+5% chance for higher face values.' },
-  6: { name: 'Tycoon', description: '+5% Global Multiplier.' },
-};
 
 /**
  * Renders a single die card with its status, face, and upgrade actions.
@@ -70,7 +63,7 @@ export const DieCard: React.FC<DieCardProps> = ({
   );
   const multiplierGain = nextMultiplier.minus(die.multiplier);
 
-  const nextMilestone = GAME_CONSTANTS.MILESTONE_LEVELS.find(l => l > die.level);
+  const nextMilestone = getNextMilestone(die.level);
   const isMilestoneClose = nextMilestone && nextMilestone - die.level <= 5;
   const cardClasses = [
     'die-card',
@@ -95,11 +88,6 @@ export const DieCard: React.FC<DieCardProps> = ({
   const animationButtonClass = canUnlockAnimation
     ? 'btn btn-primary btn-small btn-glow'
     : 'btn btn-primary btn-small';
-
-  const getDieFace = (face: number): string => {
-    const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-    return faces[face - 1] || '⚀';
-  };
 
   const getAnimationClass = (): string => {
     if (!die.isRolling) return '';
