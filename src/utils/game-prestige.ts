@@ -1,4 +1,4 @@
-import Decimal from './decimal';
+import Decimal, { calculateCost } from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState } from '../types/game';
 import { PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
@@ -191,7 +191,7 @@ export function performPrestigeReset(state: GameState): GameState {
 export function getPrestigeUpgradeCost(key: PrestigeShopKey, currentLevel: number): DecimalType {
   const item = PRESTIGE_SHOP_ITEMS[key];
   if (!item) return new Decimal(0);
-  return item.baseCost.times(item.costGrowth.pow(currentLevel));
+  return calculateCost(item.baseCost, item.costGrowth, currentLevel);
 }
 
 /**

@@ -91,6 +91,15 @@ export function getAnimationUnlockCost(currentLevel: number): DecimalType {
   return GAME_CONSTANTS.ANIMATION_UNLOCK_COST.times(currentLevel + 1);
 }
 
+/**
+ * Gets the next milestone level for a given current level.
+ * @param currentLevel The current level.
+ * @returns The next milestone level, or undefined if no more milestones.
+ */
+export function getNextMilestone(currentLevel: number): number | undefined {
+  return GAME_CONSTANTS.MILESTONE_LEVELS.find(l => l > currentLevel);
+}
+
 /** Dice upgrade operations */
 
 /**

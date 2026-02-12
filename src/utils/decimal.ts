@@ -11,7 +11,7 @@ type DecimalFactoryStatics = {
 };
 
 type DecimalFactory = {
-  new (value?: DecimalInput): DecimalType;
+  new(value?: DecimalInput): DecimalType;
   (value?: DecimalInput): DecimalType;
   fromValue?: (value?: DecimalInput) => DecimalType;
   Decimal?: DecimalFactory;
@@ -33,6 +33,7 @@ const isDecimalLike = (value: unknown): value is DecimalType => {
 };
 
 export default Decimal;
+export type { DecimalType as Decimal };
 
 /**
  * Convert a number, string, or Decimal to a Decimal instance.
@@ -110,15 +111,15 @@ export function formatDecimal(
  */
 export function formatShort(value: DecimalType | number | string): string {
   const decimal = toDecimal(value);
-  
+
   if (decimal.lt(1000)) {
     return decimal.toFixed(0);
   }
-  
+
   if (decimal.lt(1000000)) {
     return formatDecimal(decimal, { decimals: 1, style: 'suffixed' });
   }
-  
+
   return formatDecimal(decimal, { decimals: 2, style: 'suffixed' });
 }
 
