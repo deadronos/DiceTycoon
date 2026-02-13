@@ -10,6 +10,10 @@ import { ASCENSION_CONFIG, PRESTIGE_SHOP_ITEMS } from './utils/constants';
 import { GameState } from './types/game';
 import { type Decimal as DecimalType } from './utils/decimal';
 import { PrestigeShopKey } from './utils/constants';
+import { type useGameFeedback } from './hooks/useGameFeedback';
+
+type GameFeedbackState = ReturnType<typeof useGameFeedback>['feedbackState'];
+type GameFeedbackActions = ReturnType<typeof useGameFeedback>['actions'];
 
 export interface AppPresenterProps {
     gameState: GameState;
@@ -21,8 +25,8 @@ export interface AppPresenterProps {
     ascensionUnlocked: boolean;
     confettiIntensity: 'low' | 'medium' | 'high';
     confettiTrigger: number;
-    feedbackState: any; // Simplified for now, should be typed properly
-    feedbackActions: any;
+    feedbackState: GameFeedbackState;
+    feedbackActions: GameFeedbackActions;
     luckGain: DecimalType;
 
     // Handlers

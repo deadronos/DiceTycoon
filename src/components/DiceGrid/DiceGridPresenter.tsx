@@ -1,23 +1,26 @@
 import React from 'react';
 import { DieCard } from '../DieCard';
 import { type Decimal as DecimalType } from '../../utils/decimal';
+import { type DieState } from '../../types/game';
+
+interface DiceGridItem {
+    die: DieState;
+    unlockCost?: DecimalType;
+    levelUpCost?: DecimalType;
+    levelsToBuy: number;
+    animationUnlockCost?: DecimalType;
+    onUnlock: () => void;
+    onLevelUp: () => void;
+    onUnlockAnimation: () => void;
+    canUnlock: boolean;
+    canLevelUp: boolean;
+    canUnlockAnimation: boolean;
+}
 
 interface DiceGridPresenterProps {
     buyAmount: number | 'max';
     setBuyAmount: (amount: number | 'max') => void;
-    diceData: Array<{
-        die: any;
-        unlockCost?: DecimalType;
-        levelUpCost?: DecimalType;
-        levelsToBuy: number;
-        animationUnlockCost?: DecimalType;
-        onUnlock: () => void;
-        onLevelUp: () => void;
-        onUnlockAnimation: () => void;
-        canUnlock: boolean;
-        canLevelUp: boolean;
-        canUnlockAnimation: boolean;
-    }>;
+    diceData: DiceGridItem[];
 }
 
 export const DiceGridPresenter: React.FC<DiceGridPresenterProps> = ({
