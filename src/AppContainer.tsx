@@ -147,7 +147,10 @@ export const AppContainer: React.FC = () => {
     const currentLuck = gameState.prestige?.luckPoints ?? new Decimal(0);
     const canUpgradeAutoroll = canAfford(gameState.credits, autorollUpgradeCost);
     const ascensionUnlocked = gameState.ascension.unlocked;
-    const confettiIntensity: "low" | "medium" | "high" = (feedbackState.lastComboMetadata?.intensity === 'legendary' ? 'high' : (feedbackState.lastComboMetadata?.intensity ?? 'low')) as any;
+    const confettiIntensity: 'low' | 'medium' | 'high' =
+        feedbackState.lastComboMetadata?.intensity === 'legendary'
+            ? 'high'
+            : feedbackState.lastComboMetadata?.intensity ?? 'low';
     const confettiTrigger: number = feedbackState.confettiTrigger ?? 0;
     const luckGain = calculateLuckGain(gameState);
 

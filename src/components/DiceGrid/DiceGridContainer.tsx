@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { GameState } from '../../types/game';
 import { GAME_CONSTANTS } from '../../utils/constants';
 import { getUnlockCost, getLevelUpCost, getAnimationUnlockCost, getBulkLevelUpCost, getMaxAffordableLevels } from '../../utils/game-logic';
-import { canAfford } from '../../utils/decimal';
+import { canAfford, type Decimal as DecimalType } from '../../utils/decimal';
 import { DiceGridPresenter } from './DiceGridPresenter';
 
 interface DiceGridContainerProps {
@@ -25,7 +25,7 @@ export const DiceGridContainer: React.FC<DiceGridContainerProps> = ({
             const unlockCost = !die.unlocked ? getUnlockCost(die.id) : undefined;
             const isMaxLevel = die.level >= GAME_CONSTANTS.MAX_DIE_LEVEL;
 
-            let levelUpCost: any; // Using any for DecimalType to avoid type mismatches during transition
+            let levelUpCost: DecimalType | undefined;
             let levelsToBuy = 1;
 
             if (die.unlocked && !isMaxLevel) {
@@ -34,7 +34,7 @@ export const DiceGridContainer: React.FC<DiceGridContainerProps> = ({
                     levelsToBuy = affordable > 0 ? affordable : 1;
                     levelUpCost = affordable > 0 ? getBulkLevelUpCost(die.level, levelsToBuy) : getLevelUpCost(die.level);
                 } else {
-                    levelsToBuy = buyAmount as number;
+                    levelsToBuy = buyAmount;
                     const maxPossible = GAME_CONSTANTS.MAX_DIE_LEVEL - die.level;
                     levelsToBuy = Math.min(levelsToBuy, maxPossible);
                     levelUpCost = getBulkLevelUpCost(die.level, levelsToBuy);
