@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from '../src/utils/decimal';
-import { getAutorollUpgradeCost, toggleAutoroll } from '../src/utils/game-autoroll';
+import { getAutorollUpgradeCost, toggleAutoroll, upgradeAutoroll } from '../src/utils/game-autoroll';
 import type { GameState } from '../src/types/game';
 import { createDefaultGameState } from '../src/utils/storage';
 
@@ -23,5 +23,17 @@ describe('game-autoroll', () => {
   it('toggleAutoroll flips enabled when level > 0', () => {
     const toggled = toggleAutoroll(makeState());
     expect(toggled.autoroll.enabled).toBe(true);
+  });
+
+  it('keeps the effective cooldown above the minimum floor after upgrades', () => {
+    const state = makeState();
+    state.credits = new Decimal('1e50');
+    state.autoroll.level = 100;
+    state.prestige!.shop['autorollCooldown'] = 5;
+
+    const upgraded = upgradeAutoroll(state);
+
+    expect(upgraded).not.toBeNull();
+    expect(upgraded!.autoroll.cooldown.gte(new Decimal(0.05))).toBe(true);
   });
 });

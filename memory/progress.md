@@ -1,4 +1,3 @@
-
 # Progress
 
 ## Summary
@@ -15,7 +14,7 @@
 
 - Populate `memory/designs/` with additional feature designs and decision records as features are implemented.
 - Add and maintain task entries in `memory/tasks/_index.md` as features are implemented; include links to related designs.
-- Decide on an archival strategy for completed tasks (keep in `_index.md` vs `memory/tasks/COMPLETED`).
+- Decide on an archival strategy for completed tasks (keep them in `_index.md` vs `memory/tasks/COMPLETED`).
 
 ## Known issues
 
@@ -74,6 +73,3 @@
 ### 2025-12-15
 
 - Documentation backfill in progress: updated `D001-core-gameplay.md` (die data model and tests) and `D002-persistence.md` (persisted fields), updated `D003-autoroll.md` to reference D007, changed `D007` status to Implemented and referenced implementation artifacts. Created `D008-die-animations-abilities.md` and opened `TASK007` to track remaining doc finalization tasks.
-
-
-

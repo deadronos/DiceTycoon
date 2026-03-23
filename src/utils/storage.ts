@@ -90,7 +90,10 @@ export function deserializeGameState(data: SerializedGameState): GameState {
     autoroll: {
       enabled: data.autoroll.enabled,
       level: data.autoroll.level,
-      cooldown: fromDecimalString(data.autoroll.cooldown, GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN),
+      cooldown: Decimal.max(
+        fromDecimalString(data.autoroll.cooldown, GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN),
+        GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN
+      ),
       dynamicBatch: typeof data.autoroll.dynamicBatch === 'boolean'
         ? data.autoroll.dynamicBatch
         : DEFAULT_AUTOROLL_DYNAMIC_BATCH,

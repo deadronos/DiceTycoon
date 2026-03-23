@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { safeSave, safeLoad } from '../src/utils/storage';
+import { createDefaultGameState, safeSave, safeLoad } from '../src/utils/storage';
 import { toDecimal } from '../src/utils/decimal';
 import type { Decimal as DecimalType } from '@patashu/break_eternity.js';
 
@@ -51,5 +51,17 @@ describe('storage.safeSave / safeLoad', () => {
     localStorage.setItem(KEY, '{not: valid json');
     const loaded = safeLoad(KEY, { ok: false });
     expect(loaded).toEqual({ ok: false });
+  });
+
+  it('normalizes autoroll cooldown to the minimum floor on load', () => {
+    const state = createDefaultGameState();
+    state.autoroll.enabled = true;
+    state.autoroll.level = 10;
+    state.autoroll.cooldown = toDecimal('0.01');
+
+    safeSave(KEY, state);
+    const loaded = safeLoad(KEY, null) as typeof state;
+
+    expect(loaded.autoroll.cooldown.gte(toDecimal('0.05'))).toBe(true);
   });
 });

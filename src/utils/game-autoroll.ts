@@ -33,8 +33,8 @@ export function getAutorollCooldown(level: number): DecimalType {
   const cooldown = GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
     GAME_CONSTANTS.AUTOROLL_COOLDOWN_REDUCTION.pow(level)
   );
-  // Hard cap at 50ms to prevent performance degradation and UI issues
-  return Decimal.max(cooldown, new Decimal(0.05));
+  // Keep a floor so the UI and batch runner never have to deal with near-zero timers.
+  return Decimal.max(cooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN);
 }
 
 function startAutorollSession(stats: GameStats) {
@@ -79,7 +79,7 @@ export function upgradeAutoroll(state: GameState): GameState | null {
       ...state.autoroll,
       enabled: true,
       level: newLevel,
-      cooldown: newCooldown,
+      cooldown: Decimal.max(newCooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN),
     },
     stats: {
       ...stats,

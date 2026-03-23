@@ -1,7 +1,7 @@
 import Decimal, { calculateCost } from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState } from '../types/game';
-import { PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
+import { GAME_CONSTANTS, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
 import { createDefaultGameState, createDefaultStats } from './storage';
 import { getAutorollCooldown } from './game-autoroll';
 import { getAscensionCreditBonus } from './ascension';
@@ -258,7 +258,7 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
     );
     autorollState = {
       ...state.autoroll,
-      cooldown: effectiveCooldown,
+      cooldown: DecimalMath.max(effectiveCooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN),
     };
   }
 
