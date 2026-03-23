@@ -187,3 +187,29 @@ export function unlockAnimation(state: GameState, dieId: number): GameState | nu
     ),
   };
 }
+
+/**
+ * Buys maximum levels for all unlocked dice in order.
+ * @param state The current game state.
+ * @returns The updated game state.
+ */
+export function buyMaxAllDice(state: GameState): GameState {
+  let workingState = { ...state };
+
+  // We loop because upgrading one die might make another one cheaper relatively
+  // (though in this game they are independent, it's a safe pattern for "buy max all")
+  // For this game, we just iterate once through all dice.
+  for (const die of state.dice) {
+    if (die.unlocked) {
+      const affordable = getMaxAffordableLevels(die.level, workingState.credits);
+      if (affordable > 0) {
+        const nextState = levelUpDie(workingState, die.id, affordable);
+        if (nextState) {
+          workingState = nextState;
+        }
+      }
+    }
+  }
+
+  return workingState;
+}

@@ -1,4 +1,6 @@
-import type { GameState } from '../types/game';
+import os
+
+content = """import type { GameState } from '../types/game';
 import { stopRollingAnimation } from './roll-helpers';
 import Decimal from './decimal';
 import { applyPrestigeMultipliers } from './game-prestige';
@@ -97,3 +99,7 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
     lastSaveTimestamp: currentTime,
   };
 }
+"""
+
+with open('src/utils/offline-progress.ts', 'w') as f:
+    f.write(content)

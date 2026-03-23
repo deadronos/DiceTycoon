@@ -7,17 +7,20 @@ type DecimalInput = number | string | DecimalType;
 type DecimalFactoryStatics = {
   pow(base: DecimalInput, exponent: number): DecimalType;
   min(a: DecimalInput, b: DecimalInput): DecimalType;
+  max(a: DecimalInput, b: DecimalInput): DecimalType;
   log10(value: DecimalInput): DecimalType;
 };
 
 type DecimalFactory = {
-  new(value?: DecimalInput): DecimalType;
-  (value?: DecimalInput): DecimalType;
-  fromValue?: (value?: DecimalInput) => DecimalType;
+  new(value?: DecimalInput): DecimalInstance;
+  (value?: DecimalInput): DecimalInstance;
+  fromValue?: (value?: DecimalInput) => DecimalInstance;
   Decimal?: DecimalFactory;
 } & Partial<DecimalFactoryStatics>;
 
-const decimalModule = DecimalImport as DecimalFactory;
+type DecimalInstance = DecimalType;
+
+const decimalModule = DecimalImport as unknown as DecimalFactory;
 const Decimal = ((decimalModule.fromValue ? decimalModule : decimalModule.Decimal ?? decimalModule) as
   DecimalFactory & DecimalFactoryStatics);
 

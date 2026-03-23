@@ -21,12 +21,14 @@ interface DiceGridPresenterProps {
     buyAmount: number | 'max';
     setBuyAmount: (amount: number | 'max') => void;
     diceData: DiceGridItem[];
+    onBuyMaxAllDice?: () => void;
 }
 
 export const DiceGridPresenter: React.FC<DiceGridPresenterProps> = ({
     buyAmount,
     setBuyAmount,
     diceData,
+    onBuyMaxAllDice,
 }) => {
     return (
         <div className="dice-section-container">
@@ -46,6 +48,13 @@ export const DiceGridPresenter: React.FC<DiceGridPresenterProps> = ({
                     onClick={() => setBuyAmount('max')}
                 >
                     Max
+                </button>
+                <button
+                    className="btn btn-small btn-secondary"
+                    onClick={onBuyMaxAllDice}
+                    style={{ marginLeft: "auto" }}
+                >
+                    Buy Max All
                 </button>
             </div>
 

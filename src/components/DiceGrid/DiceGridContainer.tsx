@@ -10,6 +10,7 @@ interface DiceGridContainerProps {
     onUnlockDie: (dieId: number) => void;
     onLevelUpDie: (dieId: number, amount?: number) => void;
     onUnlockAnimation: (dieId: number) => void;
+    onBuyMaxAllDice?: () => void;
 }
 
 export const DiceGridContainer: React.FC<DiceGridContainerProps> = ({
@@ -17,6 +18,7 @@ export const DiceGridContainer: React.FC<DiceGridContainerProps> = ({
     onUnlockDie,
     onLevelUpDie,
     onUnlockAnimation,
+    onBuyMaxAllDice,
 }) => {
     const [buyAmount, setBuyAmount] = useState<number | 'max'>(1);
 
@@ -66,6 +68,7 @@ export const DiceGridContainer: React.FC<DiceGridContainerProps> = ({
             buyAmount={buyAmount}
             setBuyAmount={setBuyAmount}
             diceData={diceData}
+            onBuyMaxAllDice={onBuyMaxAllDice}
         />
     );
 };

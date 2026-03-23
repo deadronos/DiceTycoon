@@ -9,6 +9,7 @@ interface CoreGameViewPresenterProps {
     isAnyDieRolling: boolean;
     onUnlockDie: (dieId: number) => void;
     onLevelUpDie: (dieId: number, amount?: number) => void;
+    onBuyMaxAllDice: () => void;
     onUnlockAnimation: (dieId: number) => void;
     onRoll: () => void;
     onToggleAutoroll: () => void;
@@ -30,6 +31,7 @@ export const CoreGameViewPresenter: React.FC<CoreGameViewPresenterProps> = ({
     onUnlockDie,
     onLevelUpDie,
     onUnlockAnimation,
+    onBuyMaxAllDice,
     onRoll,
     onToggleAutoroll,
     onUpgradeAutoroll,
@@ -51,6 +53,7 @@ export const CoreGameViewPresenter: React.FC<CoreGameViewPresenterProps> = ({
                     onUnlockDie={onUnlockDie}
                     onLevelUpDie={onLevelUpDie}
                     onUnlockAnimation={onUnlockAnimation}
+                    onBuyMaxAllDice={onBuyMaxAllDice}
                 />
             </div>
 
