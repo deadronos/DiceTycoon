@@ -1,7 +1,8 @@
-import type { GameState } from '../types/game';
+import os
+
+content = """import type { GameState } from '../types/game';
 import { stopRollingAnimation } from './roll-helpers';
 import Decimal from './decimal';
-import { GAME_CONSTANTS } from './constants';
 import { applyPrestigeMultipliers } from './game-prestige';
 
 /**
@@ -17,16 +18,14 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   }
 
   const timeDiff = currentTime - state.lastSaveTimestamp;
-  const cooldownMs = Math.max(
-    state.autoroll.cooldown.toNumber() * 1000,
-    GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN.toNumber() * 1000
-  );
+  const cooldownMs = state.autoroll.cooldown.toNumber() * 1000;
   const rollsPerformed = Math.floor(timeDiff / cooldownMs);
 
   if (rollsPerformed <= 0) return { ...state, lastSaveTimestamp: currentTime };
 
   // Calculate Average Roll Value
   let averageBaseCredits = new Decimal(0);
+  let maxPossibleBaseCredits = new Decimal(0);
   let unlockedDiceCount = 0;
 
   for (const die of state.dice) {
@@ -37,6 +36,10 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
       const avgFace = 3.5;
       const dieCredits = die.multiplier.times(avgFace).times(posMult);
       averageBaseCredits = averageBaseCredits.plus(dieCredits);
+
+      // Max face value is 6
+      const maxDieCredits = die.multiplier.times(6).times(posMult);
+      maxPossibleBaseCredits = maxPossibleBaseCredits.plus(maxDieCredits);
 
       unlockedDiceCount++;
     }
@@ -54,6 +57,28 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   let averageCreditsPerRoll = averageBaseCredits.times(averageComboMultiplier);
   averageCreditsPerRoll = applyPrestigeMultipliers(averageCreditsPerRoll, state);
 
+  // Estimate a "Likely Best Roll" during this period
+  // A "perfect" roll involves a Flush (2.0x) and all 6s.
+  // Probability of Flush is ~1.5% with 6 dice. If rollsPerformed > 100, it's very likely.
+  let likelyBestRoll = state.stats.bestRoll;
+  if (rollsPerformed > 0) {
+      let maxComboMult = new Decimal(1.0);
+      if (unlockedDiceCount >= 6) maxComboMult = new Decimal(2.0); // Flush
+      else if (unlockedDiceCount >= 3) maxComboMult = new Decimal(1.1); // Triple
+
+      let potentialBest = maxPossibleBaseCredits.times(maxComboMult);
+      potentialBest = applyPrestigeMultipliers(potentialBest, state);
+
+      // If we performed enough rolls, we probably hit close to the max
+      // Scale based on number of rolls (diminishing returns towards the potential max)
+      const confidence = Math.min(rollsPerformed / 1000, 1.0);
+      const estimatedBest = potentialBest.times(0.8 + 0.2 * confidence);
+
+      if (estimatedBest.gt(likelyBestRoll)) {
+          likelyBestRoll = estimatedBest;
+      }
+  }
+
   const totalOfflineCredits = averageCreditsPerRoll.times(rollsPerformed);
 
   // Update stats
@@ -69,7 +94,12 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
     stats: {
       ...workingState.stats,
       totalCreditsEarned,
+      bestRoll: likelyBestRoll,
     },
     lastSaveTimestamp: currentTime,
   };
 }
+"""
+
+with open('src/utils/offline-progress.ts', 'w') as f:
+    f.write(content)

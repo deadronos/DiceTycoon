@@ -70,6 +70,7 @@ export const GAME_CONSTANTS: GameConstants = {
   
   // Autoroll
   BASE_AUTOROLL_COOLDOWN: new Decimal(2.0), // 2 seconds
+  AUTOROLL_MIN_COOLDOWN: new Decimal(0.05), // 50ms hard floor
   AUTOROLL_COOLDOWN_REDUCTION: new Decimal(0.9), // 10% faster per level
   AUTOROLL_UNLOCK_COST: new Decimal(50),
   AUTOROLL_UPGRADE_COST: new Decimal(100),

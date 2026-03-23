@@ -16,6 +16,7 @@
 - [TASK004] Fix header credits accessibility and build health - Addressed failing header test and restored green build (2025-11-06)
 - [TASK005] Implement Balance Improvements: Prestige Rebalance & Multi-Combo Detection - Rebalanced prestige formula for early access and added multi-combo detection system with bonus multipliers (2025-11-10)
 - [TASK006] Implement Autoroll Decimal Batching - Decimal runner, UI wiring, and tests (2025-11-10)
+- [TASK008] Fix autoroll cooldown floor and offline-best-roll handling - Completed (2026-03-23)
 
 ## Abandoned
 

@@ -341,6 +341,8 @@ export interface GameConstants {
   MULTIPLIER_PER_LEVEL: DecimalType;
   /** Base cooldown in seconds/units for auto-roll. */
   BASE_AUTOROLL_COOLDOWN: DecimalType;
+  /** Minimum effective cooldown allowed for auto-roll. */
+  AUTOROLL_MIN_COOLDOWN: DecimalType;
   /** Amount to reduce auto-roll cooldown per upgrade level. */
   AUTOROLL_COOLDOWN_REDUCTION: DecimalType;
   /** Cost to unlock the auto-roll feature. */

@@ -4,6 +4,7 @@ import { useGameFeedback } from './hooks/useGameFeedback';
 import { useGameLoop } from './hooks/useGameLoop';
 import {
     unlockDie,
+    buyMaxAllDice,
     levelUpDie,
     upgradeAutoroll,
     toggleAutoroll,
@@ -58,6 +59,10 @@ export const AppContainer: React.FC = () => {
         const newState = levelUpDie(gameState, dieId, amount);
         if (newState) setGameState(newState);
     }, [gameState, setGameState]);
+
+    const handleBuyMaxAllDice = useCallback(() => {
+        setGameState(prev => buyMaxAllDice(prev));
+    }, [setGameState]);
 
     const handleUnlockAnimation = useCallback((dieId: number) => {
         const newState = unlockAnimation(gameState, dieId);
@@ -172,6 +177,7 @@ export const AppContainer: React.FC = () => {
             setActiveView={setActiveView}
             handleUnlockDie={handleUnlockDie}
             handleLevelUpDie={handleLevelUpDie}
+            handleBuyMaxAllDice={handleBuyMaxAllDice}
             handleUnlockAnimation={handleUnlockAnimation}
             handleRoll={handleRoll}
             handleToggleAutoroll={handleToggleAutoroll}

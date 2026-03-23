@@ -30,9 +30,11 @@ export function getAutorollUpgradeCost(currentLevel: number): DecimalType {
  */
 export function getAutorollCooldown(level: number): DecimalType {
   if (level === 0) return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN;
-  return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
+  const cooldown = GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
     GAME_CONSTANTS.AUTOROLL_COOLDOWN_REDUCTION.pow(level)
   );
+  // Keep a floor so the UI and batch runner never have to deal with near-zero timers.
+  return Decimal.max(cooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN);
 }
 
 function startAutorollSession(stats: GameStats) {
@@ -77,7 +79,7 @@ export function upgradeAutoroll(state: GameState): GameState | null {
       ...state.autoroll,
       enabled: true,
       level: newLevel,
-      cooldown: newCooldown,
+      cooldown: Decimal.max(newCooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN),
     },
     stats: {
       ...stats,

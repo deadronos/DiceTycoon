@@ -7,6 +7,7 @@ interface CoreGameViewContainerProps {
     gameState: GameState;
     onUnlockDie: (dieId: number) => void;
     onLevelUpDie: (dieId: number, amount?: number) => void;
+    onBuyMaxAllDice: () => void;
     onUnlockAnimation: (dieId: number) => void;
     onRoll: () => void;
     onToggleAutoroll: () => void;

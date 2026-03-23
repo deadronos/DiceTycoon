@@ -52,7 +52,7 @@ export function executeRoll(
     rolledFaces.push(face);
 
     // Calculate credits for this die
-    let credits = die.multiplier.times(face).times(die.id);
+    let credits = die.multiplier.times(face).times(new Decimal(1).plus(new Decimal(0.1).times(die.id - 1)));
 
     // Ability: Die 2 (Buffer) - +10% multiplier to adjacent dice
     const die2 = state.dice.find(d => d.id === 2);

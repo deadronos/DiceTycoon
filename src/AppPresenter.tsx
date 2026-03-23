@@ -34,6 +34,7 @@ export interface AppPresenterProps {
     setActiveView: (view: 'core' | 'ascension') => void;
     handleUnlockDie: (dieId: number) => void;
     handleLevelUpDie: (dieId: number, amount?: number) => void;
+    handleBuyMaxAllDice: () => void;
     handleUnlockAnimation: (dieId: number) => void;
     handleRoll: () => void;
     handleToggleAutoroll: () => void;
@@ -70,6 +71,7 @@ export const AppPresenter: React.FC<AppPresenterProps> = ({
     setActiveView,
     handleUnlockDie,
     handleLevelUpDie,
+    handleBuyMaxAllDice,
     handleUnlockAnimation,
     handleRoll,
     handleToggleAutoroll,
@@ -125,6 +127,7 @@ export const AppPresenter: React.FC<AppPresenterProps> = ({
                     gameState={gameState}
                     onUnlockDie={handleUnlockDie}
                     onLevelUpDie={handleLevelUpDie}
+                    onBuyMaxAllDice={handleBuyMaxAllDice}
                     onUnlockAnimation={handleUnlockAnimation}
                     onRoll={handleRoll}
                     onToggleAutoroll={handleToggleAutoroll}

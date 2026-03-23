@@ -1,4 +1,6 @@
-import Decimal from './decimal';
+import os
+
+content = """import Decimal from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState, AchievementState, GameStats } from '../types/game';
 import type { ComboResult } from '../types/combo';
@@ -199,3 +201,7 @@ export function getAchievementGlobalMultiplier(unlockedIds: string[]): DecimalTy
 export function getAchievementDefinitions(): AchievementDefinition[] {
   return ACHIEVEMENTS;
 }
+"""
+
+with open('src/utils/achievements.ts', 'w') as f:
+    f.write(content)
