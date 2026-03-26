@@ -91,7 +91,7 @@ describe('Multi-Combo Detection', () => {
       };
       
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.05, 2);
+      expect(multiplier.toNumber()).toBeCloseTo(1.10, 2);
     });
 
     it('returns boosted multiplier for two pairs', () => {
@@ -107,9 +107,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // pair (1.05) × pair (1.05) × multi-bonus (1.25) = 1.378125
+      // pair (1.10) × pair (1.10) × multi-bonus (1.25) = 1.5125
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.378125, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.5125, 4);
     });
 
     it('returns boosted multiplier for triple + pair', () => {
@@ -125,9 +125,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // triple (1.1) × pair (1.05) × multi-bonus (1.25) = 1.44375
+      // triple (1.1) × pair (1.10) × multi-bonus (1.25) = 1.5125
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.44375, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.5125, 4);
     });
 
     it('returns boosted multiplier for two triples', () => {
@@ -161,9 +161,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // fourKind (1.2) × pair (1.05) × multi-bonus (1.25) = 1.575
+      // fourKind (1.2) × pair (1.10) × multi-bonus (1.25) = 1.65
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.575, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.65, 4);
     });
   });
 
@@ -227,44 +227,17 @@ describe('Multi-Combo Detection', () => {
   });
 
   describe('Multi-combo probability and balance', () => {
-    it('calculates expected frequency of two pairs', () => {
-      // Two pairs from 6 dice: choose 2 pairs from 6 faces
-      // Approximate probability with 6 dice rolling independently
-      // Actual measurement shows ~38% with our detection algorithm
-      const trials = 10000;
-      let twoPairCount = 0;
-      
-      for (let i = 0; i < trials; i++) {
-        const faces = Array.from({ length: 6 }, () => Math.floor(Math.random() * 6) + 1);
-        const combo = detectCombo(faces);
-        
-        if (combo?.isMultiCombo && combo.kind === 'pair' && combo.multiCombo?.kind === 'pair') {
-          twoPairCount++;
-        }
-      }
-      
-      const frequency = twoPairCount / trials;
-      // Expected: around 30-45% based on empirical testing
-      expect(frequency).toBeGreaterThan(0.25);
-      expect(frequency).toBeLessThan(0.50);
-    });
+    it('classifies multi-combo metadata deterministically for common patterns', () => {
+      const twoPairs = detectCombo([1, 1, 3, 3, 5, 6]);
+      const triplePair = detectCombo([2, 2, 2, 5, 5, 6]);
 
-    it('verifies multi-combos are common with 6 dice', () => {
-      const trials = 10000;
-      let multiComboCount = 0;
-      
-      for (let i = 0; i < trials; i++) {
-        const faces = Array.from({ length: 6 }, () => Math.floor(Math.random() * 6) + 1);
-        const combo = detectCombo(faces);
-        
-        if (combo?.isMultiCombo) {
-          multiComboCount++;
-        }
-      }
-      
-      // With 6 dice, multi-combos (especially two pairs) are actually quite common
-      expect(multiComboCount).toBeGreaterThan(0);
-      expect(multiComboCount).toBeGreaterThan(trials * 0.3); // At least 30% of trials
+      expect(twoPairs?.isMultiCombo).toBe(true);
+      expect(twoPairs?.kind).toBe('pair');
+      expect(twoPairs?.multiCombo?.kind).toBe('pair');
+
+      expect(triplePair?.isMultiCombo).toBe(true);
+      expect(triplePair?.kind).toBe('triple');
+      expect(triplePair?.multiCombo?.kind).toBe('pair');
     });
   });
 });

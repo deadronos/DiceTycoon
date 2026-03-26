@@ -21,6 +21,7 @@ interface GameControlPanelPresenterProps {
     onBatchThresholdChange: (value: number) => void;
     onMaxRollsPerTickChange: (value: number) => void;
     onAnimationBudgetChange: (value: number) => void;
+    onToggleSound: () => void;
     gameState: GameState;
     onExport: () => void;
     onImport: () => void;
@@ -40,6 +41,7 @@ export const GameControlPanelPresenter: React.FC<GameControlPanelPresenterProps>
     onBatchThresholdChange,
     onMaxRollsPerTickChange,
     onAnimationBudgetChange,
+    onToggleSound,
     gameState,
     onExport,
     onImport,
@@ -64,6 +66,12 @@ export const GameControlPanelPresenter: React.FC<GameControlPanelPresenterProps>
         <StatsPanel gameState={gameState} />
         <ComboHistoryPanel comboChain={gameState.stats.comboChain} />
         <AchievementsPanel achievements={gameState.achievements} />
-        <SettingsPanel onExport={onExport} onImport={onImport} onReset={onReset} />
+        <SettingsPanel
+            soundEnabled={gameState.settings.sound}
+            onToggleSound={onToggleSound}
+            onExport={onExport}
+            onImport={onImport}
+            onReset={onReset}
+        />
     </div>
 );

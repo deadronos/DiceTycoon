@@ -60,6 +60,13 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
     reward: { type: 'global_multiplier', value: new Decimal(0.05) }, // +5%
     check: ({ state }) => state.totalRolls >= 10000,
   },
+  {
+    id: 'marathon-roller-2',
+    name: 'Century Roller',
+    description: 'Perform 100,000 total rolls.',
+    reward: { type: 'global_multiplier', value: new Decimal(0.10) }, // +10%
+    check: ({ state }) => state.totalRolls >= 100000,
+  },
   // Combo Milestones
   {
     id: 'hot-hand',
@@ -74,6 +81,13 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
     description: 'Reach a combo chain of 10 or higher.',
     reward: { type: 'global_multiplier', value: new Decimal(0.10) }, // +10%
     check: ({ stats }) => stats.comboChain.best >= 10,
+  },
+  {
+    id: 'combo-master',
+    name: 'Combo Master',
+    description: 'Reach a combo chain of 5 or higher.',
+    reward: { type: 'global_multiplier', value: new Decimal(0.05) }, // +5%
+    check: ({ stats }) => stats.comboChain.best >= 5,
   },
   // Credit Milestones
   {
@@ -113,6 +127,13 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
     reward: { type: 'luck_points', value: new Decimal(5) }, // 5 Luck Points
     check: ({ state }) => state.dice.every(die => die.unlocked),
   },
+  {
+    id: 'die-hard',
+    name: 'Die Hard',
+    description: 'Level a die to 100.',
+    reward: { type: 'luck_points', value: new Decimal(2) }, // 2 Luck Points
+    check: ({ state }) => state.dice.some(die => die.level >= 100),
+  },
   // Specific Combo Milestones
   {
     id: 'royal-flush-luck',
@@ -127,6 +148,13 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
     description: 'Roll a Six of a Kind.',
     reward: { type: 'global_multiplier', value: new Decimal(0.25) }, // +25%
     check: ({ combo }) => combo?.kind === 'sixKind',
+  },
+  {
+    id: 'multi-tasker',
+    name: 'Multi-Tasker',
+    description: 'Roll a Multi-Combo.',
+    reward: { type: 'luck_points', value: new Decimal(1) }, // 1 Luck Point
+    check: ({ combo }) => combo?.isMultiCombo === true,
   },
 ];
 

@@ -16,6 +16,7 @@ interface CoreGameViewContainerProps {
     onBatchThresholdChange: (value: number) => void;
     onMaxRollsPerTickChange: (value: number) => void;
     onAnimationBudgetChange: (value: number) => void;
+    onToggleSound: () => void;
     onExport: () => void;
     onImport: () => void;
     onReset: () => void;

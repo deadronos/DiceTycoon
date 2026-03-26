@@ -31,11 +31,11 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
 
   for (const die of state.dice) {
     if (die.unlocked) {
-      const posMult = new Decimal(1).plus(new Decimal(0.1).times(die.id - 1));
+
 
       // Average face value of d6 is 3.5
       const avgFace = 3.5;
-      const dieCredits = die.multiplier.times(avgFace).times(posMult);
+      const dieCredits = die.multiplier.times(avgFace);
       averageBaseCredits = averageBaseCredits.plus(dieCredits);
 
       unlockedDiceCount++;
