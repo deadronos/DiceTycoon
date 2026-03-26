@@ -91,7 +91,7 @@ describe('Multi-Combo Detection', () => {
       };
       
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.05, 2);
+      expect(multiplier.toNumber()).toBeCloseTo(1.10, 2);
     });
 
     it('returns boosted multiplier for two pairs', () => {
@@ -107,9 +107,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // pair (1.05) × pair (1.05) × multi-bonus (1.25) = 1.378125
+      // pair (1.10) × pair (1.10) × multi-bonus (1.25) = 1.5125
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.378125, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.5125, 4);
     });
 
     it('returns boosted multiplier for triple + pair', () => {
@@ -125,9 +125,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // triple (1.1) × pair (1.05) × multi-bonus (1.25) = 1.44375
+      // triple (1.1) × pair (1.10) × multi-bonus (1.25) = 1.5125
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.44375, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.5125, 4);
     });
 
     it('returns boosted multiplier for two triples', () => {
@@ -161,9 +161,9 @@ describe('Multi-Combo Detection', () => {
         },
       };
       
-      // fourKind (1.2) × pair (1.05) × multi-bonus (1.25) = 1.575
+      // fourKind (1.2) × pair (1.10) × multi-bonus (1.25) = 1.65
       const multiplier = getComboMultiplier(combo);
-      expect(multiplier.toNumber()).toBeCloseTo(1.575, 4);
+      expect(multiplier.toNumber()).toBeCloseTo(1.65, 4);
     });
   });
 

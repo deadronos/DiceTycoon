@@ -4,6 +4,7 @@ import type { GameState } from '../types/game';
 import type { ComboResult } from '../types/combo';
 import { GAME_CONSTANTS } from './constants';
 import { detectCombo } from './combos';
+import { SoundManager } from './audio';
 import { rollDie } from './decimal';
 import { applyRollOutcome } from './game-roll';
 
@@ -37,6 +38,8 @@ export function executeRoll(
   const rolledFaces: number[] = [];
   let extraRollTriggered = false;
 
+  if (animate && !isExtraRoll) SoundManager.playRollSound();
+
   const isCritical = !isExtraRoll && Math.random() < GAME_CONSTANTS.BASE_CRIT_CHANCE;
 
   const updatedDice = state.dice.map((die) => {
@@ -52,7 +55,7 @@ export function executeRoll(
     rolledFaces.push(face);
 
     // Calculate credits for this die
-    let credits = die.multiplier.times(face).times(new Decimal(1).plus(new Decimal(0.1).times(die.id - 1)));
+    let credits = die.multiplier.times(face);
 
     // Ability: Die 2 (Buffer) - +10% multiplier to adjacent dice
     const die2 = state.dice.find(d => d.id === 2);

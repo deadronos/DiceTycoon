@@ -48,7 +48,7 @@ const COMBO_EMOJIS: Record<ComboKind, string> = {
  * rewards for rare combos (flush/six of a kind).
  */
 const COMBO_BONUS_MULTIPLIER: Record<ComboKind, number> = {
-  pair: 1.05,
+  pair: 1.10,
   triple: 1.1,
   fourKind: 1.2,
   fiveKind: 1.35,
