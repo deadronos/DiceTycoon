@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useGameState } from './hooks/useGameState';
 import { useGameFeedback } from './hooks/useGameFeedback';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -27,6 +27,7 @@ import { type PrestigeShopKey } from './utils/constants';
 import { GameState, AutorollState } from './types/game';
 import { AutorollBatchOutcome } from './utils/autorollBatchRunner';
 import { safeSave } from './utils/storage';
+import { SoundManager } from './utils/audio';
 import { AppPresenter } from './AppPresenter';
 
 export const AppContainer: React.FC = () => {
@@ -48,6 +49,10 @@ export const AppContainer: React.FC = () => {
         onBatchComplete,
         onRollFeedback: feedbackActions.showRollFeedback,
     });
+
+    useEffect(() => {
+        SoundManager.setMuted(!gameState.settings.sound);
+    }, [gameState.settings.sound]);
 
     // Action handlers
     const handleUnlockDie = useCallback((dieId: number) => {
@@ -103,6 +108,16 @@ export const AppContainer: React.FC = () => {
     const handleAnimationBudgetChange = useCallback((value: number) => {
         updateAutorollSettings({ animationBudget: Math.max(0, value) });
     }, [updateAutorollSettings]);
+
+    const handleToggleSound = useCallback(() => {
+        setGameState(prev => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                sound: !prev.settings.sound,
+            },
+        }));
+    }, [setGameState]);
 
     const handleBuyPrestigeUpgrade = useCallback((key: PrestigeShopKey) => {
         const newState = buyPrestigeUpgrade(gameState, key);
@@ -186,6 +201,7 @@ export const AppContainer: React.FC = () => {
             handleBatchThresholdChange={handleBatchThresholdChange}
             handleMaxRollsPerTickChange={handleMaxRollsPerTickChange}
             handleAnimationBudgetChange={handleAnimationBudgetChange}
+            handleToggleSound={handleToggleSound}
             handleExport={handleExport}
             handleImport={handleImport}
             resetGame={resetGame}

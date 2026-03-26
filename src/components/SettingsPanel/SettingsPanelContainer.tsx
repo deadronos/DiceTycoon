@@ -2,6 +2,8 @@ import React from 'react';
 import { SettingsPanelPresenter } from './SettingsPanelPresenter';
 
 interface SettingsPanelContainerProps {
+    soundEnabled: boolean;
+    onToggleSound: () => void;
     onExport: () => void;
     onImport: () => void;
     onReset: () => void;

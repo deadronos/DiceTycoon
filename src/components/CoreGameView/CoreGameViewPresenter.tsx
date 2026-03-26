@@ -18,6 +18,7 @@ interface CoreGameViewPresenterProps {
     onBatchThresholdChange: (value: number) => void;
     onMaxRollsPerTickChange: (value: number) => void;
     onAnimationBudgetChange: (value: number) => void;
+    onToggleSound: () => void;
     onExport: () => void;
     onImport: () => void;
     onReset: () => void;
@@ -39,6 +40,7 @@ export const CoreGameViewPresenter: React.FC<CoreGameViewPresenterProps> = ({
     onBatchThresholdChange,
     onMaxRollsPerTickChange,
     onAnimationBudgetChange,
+    onToggleSound,
     onExport,
     onImport,
     onReset,
@@ -74,6 +76,7 @@ export const CoreGameViewPresenter: React.FC<CoreGameViewPresenterProps> = ({
                 onExport={onExport}
                 onImport={onImport}
                 onReset={onReset}
+                onToggleSound={onToggleSound}
             />
         </div>
     );

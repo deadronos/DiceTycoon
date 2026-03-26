@@ -43,6 +43,7 @@ export interface AppPresenterProps {
     handleBatchThresholdChange: (value: number) => void;
     handleMaxRollsPerTickChange: (value: number) => void;
     handleAnimationBudgetChange: (value: number) => void;
+    handleToggleSound: () => void;
     handleExport: () => void;
     handleImport: () => void;
     resetGame: () => void;
@@ -80,6 +81,7 @@ export const AppPresenter: React.FC<AppPresenterProps> = ({
     handleBatchThresholdChange,
     handleMaxRollsPerTickChange,
     handleAnimationBudgetChange,
+    handleToggleSound,
     handleExport,
     handleImport,
     resetGame,
@@ -136,6 +138,7 @@ export const AppPresenter: React.FC<AppPresenterProps> = ({
                     onBatchThresholdChange={handleBatchThresholdChange}
                     onMaxRollsPerTickChange={handleMaxRollsPerTickChange}
                     onAnimationBudgetChange={handleAnimationBudgetChange}
+                    onToggleSound={handleToggleSound}
                     onExport={handleExport}
                     onImport={handleImport}
                     onReset={resetGame}

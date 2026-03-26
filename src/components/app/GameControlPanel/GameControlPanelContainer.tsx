@@ -16,6 +16,7 @@ interface GameControlPanelContainerProps {
     onBatchThresholdChange?: (value: number) => void;
     onMaxRollsPerTickChange?: (value: number) => void;
     onAnimationBudgetChange?: (value: number) => void;
+    onToggleSound: () => void;
     gameState: GameState;
     onExport: () => void;
     onImport: () => void;

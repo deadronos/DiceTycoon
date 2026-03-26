@@ -1,15 +1,54 @@
+type WebAudioNode = {
+  connect(destination: unknown): void;
+};
+
+type WebAudioOscillator = WebAudioNode & {
+  type: string;
+  frequency: {
+    setValueAtTime(value: number, time: number): void;
+    exponentialRampToValueAtTime(value: number, time: number): void;
+  };
+  start(): void;
+  stop(time?: number): void;
+};
+
+type WebAudioGain = WebAudioNode & {
+  gain: {
+    setValueAtTime(value: number, time: number): void;
+    exponentialRampToValueAtTime(value: number, time: number): void;
+    linearRampToValueAtTime(value: number, time: number): void;
+  };
+};
+
+type WebAudioContext = {
+  state: string;
+  currentTime: number;
+  destination: unknown;
+  resume(): Promise<void>;
+  createOscillator(): WebAudioOscillator;
+  createGain(): WebAudioGain;
+};
+
 export class SoundManager {
-  private static audioCtx: AudioContext | null = null;
+  private static audioCtx: WebAudioContext | null = null;
   private static isMuted: boolean = false;
 
-  private static getContext(): AudioContext | null {
+  private static getContext(): WebAudioContext | null {
     if (typeof window === 'undefined') return null;
 
     if (!this.audioCtx) {
       try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass = globalThis.AudioContext ?? (globalThis as typeof globalThis & {
+          webkitAudioContext?: new () => WebAudioContext;
+        }).webkitAudioContext;
+
+        if (!AudioContextClass) {
+          console.warn('Web Audio API not supported');
+          return null;
+        }
+
         this.audioCtx = new AudioContextClass();
-      } catch (e) {
+      } catch {
         console.warn('Web Audio API not supported');
         return null;
       }
@@ -49,7 +88,7 @@ export class SoundManager {
 
       osc.start();
       osc.stop(ctx.currentTime + 0.1);
-    } catch (e) {
+    } catch {
         // Ignore audio playback errors
     }
   }
@@ -76,7 +115,7 @@ export class SoundManager {
 
         osc.start();
         osc.stop(ctx.currentTime + 0.3);
-      } catch (e) {
+        } catch {
           // Ignore
       }
   }
