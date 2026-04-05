@@ -3,7 +3,7 @@ import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState, ComboChainStats, GameStats } from '../types/game';
 import type { ComboResult } from '../types/combo';
 import { getComboMultiplier } from './combos';
-import { applyPrestigeMultipliers } from './game-prestige';
+import { applyGlobalMultipliers } from './multipliers';
 import { evaluateAchievements } from './achievements';
 import { createDefaultStats } from './storage';
 import { executeRoll } from './roll-helpers';
@@ -120,7 +120,7 @@ export function applyRollOutcome(
   }
 
   finalCredits = finalCredits.times(chainMultiplier);
-  finalCredits = applyPrestigeMultipliers(finalCredits, state);
+  finalCredits = applyGlobalMultipliers(finalCredits, state);
 
   const updatedStats = updateStatsAfterRoll(state, finalCredits, rolledFaces, chain);
   const baseState: GameState = {

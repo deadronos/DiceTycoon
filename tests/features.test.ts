@@ -1,3 +1,4 @@
+import * as decimal from '../src/utils/decimal';
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from '../src/utils/decimal';
 import { getBulkLevelUpCost, getMaxAffordableLevels } from '../src/utils/dice-upgrades';
@@ -71,7 +72,8 @@ describe('Feature: Milestones', () => {
 describe('Feature: Critical Roll', () => {
   it('triggers critical roll based on random chance', () => {
     // Mock Math.random to return 0 (force crit)
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    // Mock the checkChance function since it's now used instead of Math.random
+    const checkChanceSpy = vi.spyOn(decimal, 'checkChance').mockReturnValue(true);
 
     const state = createDefaultGameState();
     state.dice[0].unlocked = true;
@@ -83,11 +85,11 @@ describe('Feature: Critical Roll', () => {
     // But calculate exact credits is hard because of random faces.
     // We can assume creditsEarned > base calculation.
 
-    randomSpy.mockRestore();
+    checkChanceSpy.mockRestore();
   });
 
   it('does not trigger critical roll if random > chance', () => {
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    const checkChanceSpy = vi.spyOn(decimal, 'checkChance').mockReturnValue(false);
 
     const state = createDefaultGameState();
     state.dice[0].unlocked = true;
@@ -96,6 +98,6 @@ describe('Feature: Critical Roll', () => {
 
     expect(result.isCritical).toBe(false);
 
-    randomSpy.mockRestore();
+    checkChanceSpy.mockRestore();
   });
 });

@@ -212,3 +212,78 @@ export function calculateMultiplier(
 
   return mult;
 }
+
+
+/**
+ * Generates a random boolean based on a probability chance.
+ * Uses crypto.getRandomValues if available, otherwise Math.random.
+ * @param probability The chance of returning true (0.0 to 1.0).
+ * @returns True if the chance succeeds, false otherwise.
+ */
+export function checkChance(probability: number): boolean {
+  if (probability <= 0) return false;
+  if (probability >= 1) return true;
+
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    // Convert max uint32 to a 0-1 float equivalent
+    return (array[0] / 4294967295) < probability;
+  }
+  // Fallback to Math.random
+  return Math.random() < probability;
+}
+
+
+/**
+ * Calculates the total cost of bulk level ups using the sum of geometric series formula.
+ * Formula: a * (r^n - 1) / (r - 1) where a = base cost at current level, r = growth rate, n = amount
+ * @param baseCost The base cost at level 0/1.
+ * @param growthRate The multiplier per level.
+ * @param currentLevel The current level.
+ * @param amount The number of levels to buy.
+ * @returns The total cost.
+ */
+export function calculateBulkCost(
+  baseCost: DecimalType,
+  growthRate: DecimalType,
+  currentLevel: number,
+  amount: number
+): DecimalType {
+  const firstTerm = calculateCost(baseCost, growthRate, currentLevel);
+
+  if (growthRate.eq(1)) {
+    return firstTerm.times(amount);
+  }
+
+  const numerator = growthRate.pow(amount).minus(1);
+  const denominator = growthRate.minus(1);
+  return firstTerm.times(numerator).div(denominator);
+}
+
+/**
+ * Calculates the maximum number of levels affordable with the given credits using geometric series sum inverse.
+ * @param baseCost The base cost at level 0/1.
+ * @param growthRate The multiplier per level.
+ * @param currentLevel The current level.
+ * @param credits The available credits.
+ * @returns The number of levels affordable.
+ */
+export function calculateMaxAffordableLevels(
+  baseCost: DecimalType,
+  growthRate: DecimalType,
+  currentLevel: number,
+  credits: DecimalType
+): number {
+  const a = calculateCost(baseCost, growthRate, currentLevel);
+
+  if (credits.lt(a)) return 0;
+  if (growthRate.eq(1)) return credits.div(a).floor().toNumber();
+
+  const rMinus1 = growthRate.minus(1);
+  const term = credits.times(rMinus1).div(a).plus(1);
+  // Add small epsilon to handle precision issues
+  const n = Decimal.log10(term).div(Decimal.log10(growthRate)).plus(1e-9).floor().toNumber();
+
+  return Math.max(0, n);
+}

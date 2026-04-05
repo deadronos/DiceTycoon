@@ -2,7 +2,7 @@ import type { GameState } from '../types/game';
 import { stopRollingAnimation } from './roll-helpers';
 import Decimal from './decimal';
 import { GAME_CONSTANTS } from './constants';
-import { applyPrestigeMultipliers } from './game-prestige';
+import { applyGlobalMultipliers } from './multipliers';
 
 /**
  * Calculates and applies offline progress based on time passed since last save.
@@ -52,7 +52,7 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
 
   // Apply multipliers to average
   let averageCreditsPerRoll = averageBaseCredits.times(averageComboMultiplier);
-  averageCreditsPerRoll = applyPrestigeMultipliers(averageCreditsPerRoll, state);
+  averageCreditsPerRoll = applyGlobalMultipliers(averageCreditsPerRoll, state);
 
   const totalOfflineCredits = averageCreditsPerRoll.times(rollsPerformed);
 

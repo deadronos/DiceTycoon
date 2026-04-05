@@ -64,6 +64,21 @@ const MULTI_COMBO_BONUS = 1.25; // +25% bonus for simultaneous combos
  * @param combo The detected combo result.
  * @returns A Decimal multiplier (e.g., 1.5 for +50% bonus).
  */
+
+/**
+ * Helper to determine combo kind based on face count.
+ * @param count Number of matching faces
+ * @returns ComboKind or null
+ */
+function getComboKindForCount(count: number): ComboKind | null {
+  for (const { threshold, kind } of COMBO_PRIORITY) {
+    if (count >= threshold) {
+      return kind;
+    }
+  }
+  return null;
+}
+
 export function getComboMultiplier(combo: ComboResult): DecimalType {
   if (!combo) return new Decimal(1);
   const primaryValue = COMBO_BONUS_MULTIPLIER[combo.kind] ?? 1;
@@ -134,12 +149,10 @@ export function detectCombo(faces: number[]): ComboResult | null {
   }
 
   // Find primary combo
+  const primaryKind = getComboKindForCount(maxCount);
   let primaryCombo: { kind: ComboKind; count: number; face: number } | null = null;
-  for (const { threshold, kind } of COMBO_PRIORITY) {
-    if (maxCount >= threshold) {
-      primaryCombo = { kind, count: maxCount, face: maxFace };
-      break;
-    }
+  if (primaryKind) {
+    primaryCombo = { kind: primaryKind, count: maxCount, face: maxFace };
   }
 
   if (!primaryCombo) return null;
@@ -162,13 +175,7 @@ export function detectCombo(faces: number[]): ComboResult | null {
 
     // Check if secondary combo qualifies (at least a pair)
     if (secondaryMaxCount >= 2) {
-      let secondaryKind: ComboKind | null = null;
-      for (const { threshold, kind } of COMBO_PRIORITY) {
-        if (secondaryMaxCount >= threshold) {
-          secondaryKind = kind;
-          break;
-        }
-      }
+      const secondaryKind = getComboKindForCount(secondaryMaxCount);
 
       if (secondaryKind) {
         return {
