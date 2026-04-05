@@ -13,3 +13,5 @@ export * from './ascension';
 export * from './storage';
 
 // (Intentionally no additional logic here.)
+
+export * from './multipliers';

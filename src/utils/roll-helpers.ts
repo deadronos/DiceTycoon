@@ -5,7 +5,7 @@ import type { ComboResult } from '../types/combo';
 import { GAME_CONSTANTS } from './constants';
 import { detectCombo } from './combos';
 import { SoundManager } from './audio';
-import { rollDie } from './decimal';
+import { rollDie, checkChance } from './decimal';
 import { applyRollOutcome } from './game-roll';
 
 /**
@@ -40,14 +40,14 @@ export function executeRoll(
 
   if (animate && !isExtraRoll) SoundManager.playRollSound();
 
-  const isCritical = !isExtraRoll && Math.random() < GAME_CONSTANTS.BASE_CRIT_CHANCE;
+  const isCritical = !isExtraRoll && checkChance(GAME_CONSTANTS.BASE_CRIT_CHANCE);
 
   const updatedDice = state.dice.map((die) => {
     if (!die.unlocked) return die;
 
     // Ability: Die 5 (Lucky) - +5% chance for higher face values
     let face = rollDie();
-    if (die.id === 5 && Math.random() < 0.05) {
+    if (die.id === 5 && checkChance(0.05)) {
        const secondRoll = rollDie();
        if (secondRoll > face) face = secondRoll;
     }
@@ -67,7 +67,7 @@ export function executeRoll(
 
     // Ability: Die 3 (Rusher) - 5% chance to trigger an immediate extra roll
     // Prevent recursive loop: only trigger if not already an extra roll
-    if (!isExtraRoll && die.id === 3 && Math.random() < 0.05) {
+    if (!isExtraRoll && die.id === 3 && checkChance(0.05)) {
         extraRollTriggered = true;
     }
 
