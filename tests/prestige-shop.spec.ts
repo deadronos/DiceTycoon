@@ -9,7 +9,7 @@ import {
   applyGuaranteedReroll,
   consumeRerollToken,
   getAutorollCooldownMultiplier,
-  applyPrestigeMultipliers,
+  applyGlobalMultipliers,
   calculateLuckGain,
   getLuckGainMultiplier,
 } from '../src/utils/game-logic';
@@ -234,14 +234,14 @@ describe('Prestige Shop', () => {
     });
   });
 
-  describe('applyPrestigeMultipliers', () => {
+  describe('applyGlobalMultipliers', () => {
     it('should apply both luck and shop multipliers', () => {
       const state = createDefaultGameState();
       state.prestige!.luckPoints = new Decimal(10); // +20% from luck
       state.prestige!.shop['multiplier'] = 1; // +5% from shop
 
       const base = new Decimal(100);
-      const final = applyPrestigeMultipliers(base, state);
+      const final = applyGlobalMultipliers(base, state);
       // 100 * 1.2 (luck) * 1.05 (shop) = 126
       expect(final.toNumber()).toBeCloseTo(126, 5);
     });
@@ -249,7 +249,7 @@ describe('Prestige Shop', () => {
     it('should handle zero multipliers gracefully', () => {
       const state = createDefaultGameState();
       const base = new Decimal(50);
-      const final = applyPrestigeMultipliers(base, state);
+      const final = applyGlobalMultipliers(base, state);
       expect(final.toNumber()).toBe(50); // no multipliers = 1 * 1 = 1
     });
   });

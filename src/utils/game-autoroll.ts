@@ -28,6 +28,19 @@ export function getAutorollUpgradeCost(currentLevel: number): DecimalType {
  * @param level The current level of the auto-roller.
  * @returns The cooldown in seconds.
  */
+
+/**
+ * Calculates the effective cooldown duration for the auto-roller, including prestige multipliers.
+ * @param state The current game state.
+ * @returns The effective cooldown in seconds.
+ */
+export function getEffectiveAutorollCooldown(state: GameState): DecimalType {
+  if (state.autoroll.level === 0) return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN;
+  const baseCooldown = getAutorollCooldown(state.autoroll.level);
+  const multiplier = getAutorollCooldownMultiplier(state);
+  return Decimal.max(baseCooldown.times(multiplier), GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN);
+}
+
 export function getAutorollCooldown(level: number): DecimalType {
   if (level === 0) return GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN;
   const cooldown = GAME_CONSTANTS.BASE_AUTOROLL_COOLDOWN.times(
@@ -63,9 +76,10 @@ export function upgradeAutoroll(state: GameState): GameState | null {
   if (state.credits.lt(cost)) return null;
 
   const newLevel = state.autoroll.level + 1;
-  const newCooldown = getAutorollCooldown(newLevel).times(
-    getAutorollCooldownMultiplier(state)
-  );
+  const newCooldown = getEffectiveAutorollCooldown({
+    ...state,
+    autoroll: { ...state.autoroll, level: newLevel }
+  });
 
   const stats = ensureStats(state.stats);
   const autorollStats = newLevel === 1
@@ -79,7 +93,7 @@ export function upgradeAutoroll(state: GameState): GameState | null {
       ...state.autoroll,
       enabled: true,
       level: newLevel,
-      cooldown: Decimal.max(newCooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN),
+      cooldown: newCooldown,
     },
     stats: {
       ...stats,

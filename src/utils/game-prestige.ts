@@ -1,11 +1,9 @@
 import Decimal, { calculateCost } from './decimal';
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState } from '../types/game';
-import { GAME_CONSTANTS, PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
+import { PRESTIGE_SHOP_ITEMS, type PrestigeShopKey } from './constants';
 import { createDefaultGameState, createDefaultStats } from './storage';
-import { getAutorollCooldown } from './game-autoroll';
-import { getAscensionCreditBonus } from './ascension';
-import { getAchievementGlobalMultiplier } from './achievements';
+import { getEffectiveAutorollCooldown } from './game-autoroll';
 
 const DecimalMath = Decimal as unknown as {
   log10(value: DecimalType): DecimalType;
@@ -13,17 +11,8 @@ const DecimalMath = Decimal as unknown as {
   min(a: DecimalType, b: DecimalType): DecimalType;
 };
 
-/**
- * Calculates the multiplier derived from Luck points.
- * @param state The current game state.
- * @returns The luck multiplier.
- */
-export function getLuckMultiplier(state: GameState): DecimalType {
-  if (!state.prestige || !state.prestige.luckPoints) return new Decimal(1);
-  const points = state.prestige.luckPoints;
-  const mult = new Decimal(1).plus(points.times(0.02));
-  return DecimalMath.min(mult, new Decimal(10));
-}
+
+
 
 /**
  * Calculates the multiplier for luck gain based on shop upgrades.
@@ -34,51 +23,6 @@ export function getLuckGainMultiplier(state: GameState): DecimalType {
   const level = state.prestige?.shop?.luckFabricator ?? 0;
   if (level <= 0) return new Decimal(1);
   return new Decimal(1).plus(new Decimal(0.1).times(level));
-}
-
-/**
- * Calculates the global multiplier from purchased shop upgrades.
- * @param state The current game state.
- * @returns The shop multiplier.
- */
-export function getShopMultiplier(state: GameState): DecimalType {
-  if (!state.prestige || !state.prestige.shop) return new Decimal(1);
-  const fortuneAmplifierLevel = state.prestige.shop.multiplier ?? 0;
-  if (fortuneAmplifierLevel <= 0) return new Decimal(1);
-  const bonus = new Decimal(fortuneAmplifierLevel).times(0.05);
-  return new Decimal(1).plus(bonus);
-}
-
-/**
- * Calculates the multiplier from special die abilities (e.g. Die 6 "Tycoon").
- * @param state The current game state.
- * @returns The ability multiplier.
- */
-export function getAbilityGlobalMultiplier(state: GameState): DecimalType {
-    // Die 6 (Tycoon): +5% Global Multiplier
-    const die6 = state.dice.find(d => d.id === 6);
-    if (die6 && die6.unlocked) {
-        return new Decimal(1.05);
-    }
-    return new Decimal(1);
-}
-
-/**
- * Applies all prestige-related multipliers to a credit amount.
- * @param baseCredits The initial credit amount.
- * @param state The current game state.
- * @returns The final credit amount after multipliers.
- */
-export function applyPrestigeMultipliers(baseCredits: DecimalType, state: GameState): DecimalType {
-  const achievementMultiplier = getAchievementGlobalMultiplier(state.achievements.unlocked);
-  const abilityMultiplier = getAbilityGlobalMultiplier(state);
-
-  return baseCredits
-    .times(getLuckMultiplier(state))
-    .times(getShopMultiplier(state))
-    .times(getAscensionCreditBonus(state))
-    .times(achievementMultiplier)
-    .times(abilityMultiplier);
 }
 
 function getRawLuckGain(state: GameState): DecimalType {
@@ -244,8 +188,7 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
   const newLevel = currentLevel + 1;
   let autorollState = state.autoroll;
   if (key === 'autorollCooldown' && state.autoroll.level > 0) {
-    const effectiveCooldown = getAutorollCooldown(state.autoroll.level).times(
-      getAutorollCooldownMultiplier({
+    const effectiveCooldown = getEffectiveAutorollCooldown({
         ...state,
         prestige: {
           ...state.prestige,
@@ -254,11 +197,10 @@ export function buyPrestigeUpgrade(state: GameState, key: PrestigeShopKey): Game
             [key]: newLevel,
           },
         },
-      })
-    );
+      });
     autorollState = {
       ...state.autoroll,
-      cooldown: DecimalMath.max(effectiveCooldown, GAME_CONSTANTS.AUTOROLL_MIN_COOLDOWN),
+      cooldown: effectiveCooldown,
     };
   }
 

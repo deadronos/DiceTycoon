@@ -1,7 +1,7 @@
 import { type Decimal as DecimalType } from '@patashu/break_eternity.js';
 import type { GameState } from '../types/game';
 import { GAME_CONSTANTS } from './constants';
-import Decimal, { calculateCost, calculateMultiplier } from './decimal';
+import { calculateCost, calculateMultiplier, calculateBulkCost, calculateMaxAffordableLevels } from './decimal';
 
 /** Cost helpers */
 
@@ -36,20 +36,12 @@ export function getLevelUpCost(currentLevel: number): DecimalType {
  * @returns The total cost.
  */
 export function getBulkLevelUpCost(currentLevel: number, amount: number): DecimalType {
-  const base = GAME_CONSTANTS.BASE_LEVEL_COST;
-  const growth = GAME_CONSTANTS.LEVEL_COST_GROWTH;
-
-  // Sum of geometric series: a * (r^n - 1) / (r - 1)
-  // First term a = cost(currentLevel) = base * growth^currentLevel
-  const firstTerm = calculateCost(base, growth, currentLevel);
-
-  if (growth.eq(1)) {
-    return firstTerm.times(amount);
-  }
-
-  const numerator = growth.pow(amount).minus(1);
-  const denominator = growth.minus(1);
-  return firstTerm.times(numerator).div(denominator);
+  return calculateBulkCost(
+    GAME_CONSTANTS.BASE_LEVEL_COST,
+    GAME_CONSTANTS.LEVEL_COST_GROWTH,
+    currentLevel,
+    amount
+  );
 }
 
 /**
@@ -61,22 +53,12 @@ export function getBulkLevelUpCost(currentLevel: number, amount: number): Decima
 export function getMaxAffordableLevels(currentLevel: number, credits: DecimalType): number {
   if (currentLevel >= GAME_CONSTANTS.MAX_DIE_LEVEL) return 0;
 
-  const base = GAME_CONSTANTS.BASE_LEVEL_COST;
-  const growth = GAME_CONSTANTS.LEVEL_COST_GROWTH;
-  const a = calculateCost(base, growth, currentLevel); // Cost of next level
-
-  if (credits.lt(a)) return 0;
-
-  // Formula derived from Sum = a * (r^n - 1) / (r - 1)
-  // credits >= a * (r^n - 1) / (r - 1)
-  // credits * (r - 1) / a >= r^n - 1
-  // r^n <= 1 + credits * (r - 1) / a
-  // n <= log_r(1 + credits * (r - 1) / a)
-
-  const rMinus1 = growth.minus(1);
-  const term = credits.times(rMinus1).div(a).plus(1);
-  // Add small epsilon to handle precision issues where 2.0 might be 1.9999999999
-  const n = Decimal.log10(term).div(Decimal.log10(growth)).plus(1e-9).floor().toNumber();
+  const n = calculateMaxAffordableLevels(
+    GAME_CONSTANTS.BASE_LEVEL_COST,
+    GAME_CONSTANTS.LEVEL_COST_GROWTH,
+    currentLevel,
+    credits
+  );
 
   const maxPossible = GAME_CONSTANTS.MAX_DIE_LEVEL - currentLevel;
   return Math.min(n, maxPossible);
