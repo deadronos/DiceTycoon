@@ -33,8 +33,8 @@ describe('Die Position Multiplier', () => {
 
   it('calculates third die correctly without position multiplier', () => {
     vi.spyOn(decimalUtils, 'rollDie').mockReturnValue(5);
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
-    
+    vi.spyOn(decimalUtils, 'checkChance').mockReturnValue(false);
+
     const state = createDefaultGameState();
     state.dice[0].unlocked = true;
     state.dice[0].multiplier = new Decimal(2);
@@ -59,7 +59,7 @@ describe('Die Position Multiplier', () => {
 
   it('evaluates all dice correctly', () => {
     vi.spyOn(decimalUtils, 'rollDie').mockReturnValue(4);
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    vi.spyOn(decimalUtils, 'checkChance').mockReturnValue(false);
     
     const state = createDefaultGameState();
     state.dice.forEach(die => {
