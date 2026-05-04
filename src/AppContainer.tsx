@@ -56,32 +56,28 @@ export const AppContainer: React.FC = () => {
 
     // Action handlers
     const handleUnlockDie = useCallback((dieId: number) => {
-        const newState = unlockDie(gameState, dieId);
-        if (newState) setGameState(newState);
-    }, [gameState, setGameState]);
+        setGameState(prev => unlockDie(prev, dieId) ?? prev);
+    }, [setGameState]);
 
     const handleLevelUpDie = useCallback((dieId: number, amount: number = 1) => {
-        const newState = levelUpDie(gameState, dieId, amount);
-        if (newState) setGameState(newState);
-    }, [gameState, setGameState]);
+        setGameState(prev => levelUpDie(prev, dieId, amount) ?? prev);
+    }, [setGameState]);
 
     const handleBuyMaxAllDice = useCallback(() => {
         setGameState(prev => buyMaxAllDice(prev));
     }, [setGameState]);
 
     const handleUnlockAnimation = useCallback((dieId: number) => {
-        const newState = unlockAnimation(gameState, dieId);
-        if (newState) setGameState(newState);
-    }, [gameState, setGameState]);
+        setGameState(prev => unlockAnimation(prev, dieId) ?? prev);
+    }, [setGameState]);
 
     const handleUpgradeAutoroll = useCallback(() => {
-        const newState = upgradeAutoroll(gameState);
-        if (newState) setGameState(newState);
-    }, [gameState, setGameState]);
+        setGameState(prev => upgradeAutoroll(prev) ?? prev);
+    }, [setGameState]);
 
     const handleToggleAutoroll = useCallback(() => {
-        setGameState(toggleAutoroll(gameState));
-    }, [gameState, setGameState]);
+        setGameState(prev => toggleAutoroll(prev));
+    }, [setGameState]);
 
     const updateAutorollSettings = useCallback((updates: Partial<AutorollState>) => {
         setGameState(prev => ({
@@ -120,9 +116,8 @@ export const AppContainer: React.FC = () => {
     }, [setGameState]);
 
     const handleBuyPrestigeUpgrade = useCallback((key: PrestigeShopKey) => {
-        const newState = buyPrestigeUpgrade(gameState, key);
-        if (newState) setGameState(newState);
-    }, [gameState, setGameState]);
+        setGameState(prev => buyPrestigeUpgrade(prev, key) ?? prev);
+    }, [setGameState]);
 
     const handleUnlockAscensionDie = useCallback((dieId: number) => {
         setGameState(prev => unlockAscensionDie(prev, dieId) ?? prev);
@@ -156,11 +151,13 @@ export const AppContainer: React.FC = () => {
     }, [setGameState]);
 
     const handlePrestigeConfirm = useCallback(() => {
-        const newState = performPrestigeReset(gameState);
-        setGameState(newState);
-        safeSave(undefined, { ...newState, lastSaveTimestamp: Date.now() });
+        setGameState(prev => {
+            const newState = performPrestigeReset(prev);
+            safeSave(undefined, { ...newState, lastSaveTimestamp: Date.now() });
+            return newState;
+        });
         setShowPrestige(false);
-    }, [gameState, setGameState]);
+    }, [setGameState]);
 
     // Derived values
     const autorollUpgradeCost = getAutorollUpgradeCost(gameState.autoroll.level);
