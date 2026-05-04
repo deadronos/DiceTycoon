@@ -180,13 +180,13 @@ export const PRESTIGE_SHOP_ITEMS = {
   },
   rerollTokens: {
     name: 'Reroll Token Pack',
-    description: 'Buy 5 reroll tokens for manual die rerolls.',
+    description: 'DEPRECATED: Manual reroll tokens not yet implemented. Use Guaranteed Reroll Slot instead.',
     baseCost: new Decimal(2),
     costGrowth: new Decimal(1.8),
     maxLevel: -1, // unlimited, consumable
     category: 'consumable',
     icon: '🔁',
-    formula: '+5 tokens per purchase',
+    formula: '+5 tokens (NOT YET IMPLEMENTED)',
   },
   extraDieSocket: {
     name: 'Lucky Die Socket',
