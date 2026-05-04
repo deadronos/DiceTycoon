@@ -68,13 +68,31 @@ export function serializeGameState(state: GameState): SerializedGameState {
 }
 
 /**
+ * Migrate saved data to current version
+ * @param data The loaded data with optional version field
+ * @returns Migrated data
+ */
+function migrateIfNeeded(data: { version?: string }): { version: string } {
+  if (!data.version) {
+    // v1 or earlier - migrate to v2 structure
+    return { ...data, version: 'v2' };
+  }
+  // Current version is v2, no migration needed yet
+  return data as { version: string };
+}
+
+/**
  * Deserializes a saved game state back into the active game state format.
  * Restores Decimal objects from strings.
  * @param data The serialized game state.
  * @returns The restored game state.
  */
 export function deserializeGameState(data: SerializedGameState): GameState {
-  const stats = data.stats ? deserializeStats(data.stats) : createDefaultStats();
+  // Apply migrations if needed
+  const migrated = migrateIfNeeded(data as { version?: string });
+  const dataWithVersion = migrated as SerializedGameState;
+
+  const stats = dataWithVersion.stats ? deserializeStats(dataWithVersion.stats) : createDefaultStats();
   const ascension = data.ascension ? deserializeAscension(data.ascension) : createDefaultAscensionState();
   return {
     credits: fromDecimalString(data.credits, new Decimal(0)),
