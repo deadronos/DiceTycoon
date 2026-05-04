@@ -56,7 +56,9 @@ export class SoundManager {
 
     // Resume context if it was suspended (autoplay policy)
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
-        this.audioCtx.resume().catch(() => {});
+        this.audioCtx.resume().catch((err) => {
+            console.warn('SoundManager: failed to resume audio context:', err);
+        });
     }
     return this.audioCtx;
   }
