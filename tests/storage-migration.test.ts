@@ -39,7 +39,7 @@ describe('storage migration', () => {
 
     // Should default prestige
     expect(result.prestige).toBeDefined();
-    expect(result.prestige.luckPoints.toString()).toBe('0');
+    expect(result.prestige!.luckPoints.toString()).toBe('0');
     expect(result.credits.toString()).toBe('1000');
   });
 
