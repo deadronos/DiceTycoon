@@ -50,8 +50,15 @@ export function calculateOfflineProgress(state: GameState, currentTime: number):
   else if (unlockedDiceCount >= 3) averageComboMultiplier = new Decimal(1.05);
   else if (unlockedDiceCount >= 2) averageComboMultiplier = new Decimal(1.01);
 
+  // Apply crit chance and multiplier (1% chance, 5x multiplier)
+  const critChance = GAME_CONSTANTS.BASE_CRIT_CHANCE; // 0.01
+  const critMultiplier = GAME_CONSTANTS.BASE_CRIT_MULTIPLIER.toNumber(); // 5
+  // Expected value of crit: (chance * multiplier) + (1 - chance) * 1
+  // = 0.01 * 5 + 0.99 * 1 = 0.05 + 0.99 = 1.04
+  const averageCritMultiplier = 1 + (critChance * (critMultiplier - 1));
+
   // Apply multipliers to average
-  let averageCreditsPerRoll = averageBaseCredits.times(averageComboMultiplier);
+  let averageCreditsPerRoll = averageBaseCredits.times(averageComboMultiplier).times(averageCritMultiplier);
   averageCreditsPerRoll = applyGlobalMultipliers(averageCreditsPerRoll, state);
 
   const totalOfflineCredits = averageCreditsPerRoll.times(rollsPerformed);
