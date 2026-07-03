@@ -35,7 +35,9 @@ describe('storage migration', () => {
       ascension: { unlocked: false, stardust: '0', resonance: '0', dice: [], lastTick: Date.now(), totalCycles: 0 },
     };
 
-    const result = deserializeGameState(v1Save as any);
+    const result = deserializeGameState(
+      v1Save as unknown as Parameters<typeof deserializeGameState>[0]
+    );
 
     // Should default prestige
     expect(result.prestige).toBeDefined();
@@ -74,7 +76,9 @@ describe('storage migration', () => {
       ascension: { unlocked: false, stardust: '0', resonance: '0', dice: [], lastTick: Date.now(), totalCycles: 0 },
     };
 
-    const result = deserializeGameState(v1Save as any);
+    const result = deserializeGameState(
+      v1Save as unknown as Parameters<typeof deserializeGameState>[0]
+    );
     expect(result).toBeDefined();
     expect(result.credits.toString()).toBe('500');
   });
