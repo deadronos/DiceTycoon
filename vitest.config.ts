@@ -5,7 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@patashu/break_eternity.js': path.resolve(
-        __dirname,
+        import.meta.dirname,
         'libs/@patashu/break_eternity.js/dist/break_eternity.esm.js'
       )
     }
