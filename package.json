@@ -15,28 +15,28 @@
     "deploy": "npm run update-docs && git add docs && git commit -m \"chore: update docs\" || echo \"no changes to commit\" && git push"
   },
   "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^26.1.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
-    "@typescript-eslint/parser": "^8.62.1",
-    "@vitejs/plugin-react": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.9",
-    "eslint": "^10.6.0",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.8.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.1",
     "typescript": "^6.0.3",
-    "vite": "^8.1.3",
-    "vitest": "^4.1.9"
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
   },
   "type": "module",
   "vitest": {

@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@patashu/break_eternity.js': path.resolve(__dirname, 'libs/@patashu/break_eternity.js/dist/break_eternity.esm.js')
+      '@patashu/break_eternity.js': path.resolve(import.meta.dirname, 'libs/@patashu/break_eternity.js/dist/break_eternity.esm.js')
     }
   },
   server: {
